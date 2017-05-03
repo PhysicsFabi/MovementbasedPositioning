@@ -1,8 +1,5 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.visualization;
 
-import android.util.Log;
-
-import edu.uv.students.mobiledevices.sensorbasedpositioning.Positioning;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.PathData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnPathChangedListener;
 import processing.core.PApplet;

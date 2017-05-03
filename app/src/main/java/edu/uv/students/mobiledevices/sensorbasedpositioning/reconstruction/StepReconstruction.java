@@ -1,6 +1,5 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.StepData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnAccelerometerEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnStepListener;
 
@@ -10,7 +9,7 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.inter
 
 public class StepReconstruction implements OnAccelerometerEventListener {
 
-    private OnStepListener onStepListener;
+    private final OnStepListener onStepListener;
 
     public StepReconstruction(OnStepListener pListener) {
         onStepListener = pListener;

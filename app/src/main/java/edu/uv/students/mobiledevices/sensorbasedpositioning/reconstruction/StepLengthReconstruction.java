@@ -1,6 +1,5 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.StepLengthData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnStepLengthChangedListener;
 
 /**
@@ -9,7 +8,7 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.inter
 
 public class StepLengthReconstruction {
 
-    private OnStepLengthChangedListener stepLengthChangedListener;
+    private final OnStepLengthChangedListener stepLengthChangedListener;
 
     public StepLengthReconstruction(OnStepLengthChangedListener pListener) {
         stepLengthChangedListener = pListener;

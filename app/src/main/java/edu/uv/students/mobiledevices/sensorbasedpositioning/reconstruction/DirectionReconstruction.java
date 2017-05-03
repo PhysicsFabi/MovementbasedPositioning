@@ -1,6 +1,5 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.DirectionData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnDirectionChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnGyroscopeEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnMagneticFieldEventListener;
@@ -10,7 +9,7 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.inter
  */
 
 public class DirectionReconstruction implements OnGyroscopeEventListener, OnMagneticFieldEventListener {
-    private OnDirectionChangedListener directionChangedListener;
+    private final OnDirectionChangedListener directionChangedListener;
 
     public DirectionReconstruction(OnDirectionChangedListener pListener) {
         directionChangedListener = pListener;

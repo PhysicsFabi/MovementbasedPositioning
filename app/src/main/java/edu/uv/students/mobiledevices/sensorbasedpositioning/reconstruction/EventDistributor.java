@@ -32,18 +32,18 @@ public class EventDistributor implements
         OnStepLengthChangedListener,
         SensorEventListener {
 
-    private LinkedList<OnPathChangedListener> onPathChangedListeners;
-    private LinkedList<OnStepListener> onStepListeners;
-    private LinkedList<OnDirectionChangedListener> onDirectionChangedListeners;
-    private LinkedList<OnStepLengthChangedListener> onStepLengthChangedListeners;
+    private final LinkedList<OnPathChangedListener> onPathChangedListeners;
+    private final LinkedList<OnStepListener> onStepListeners;
+    private final LinkedList<OnDirectionChangedListener> onDirectionChangedListeners;
+    private final LinkedList<OnStepLengthChangedListener> onStepLengthChangedListeners;
 
-    private LinkedList<OnAccelerometerEventListener> onAccelerometerEventListeners;
-    private LinkedList<OnGyroscopeEventListener> onGyroscopeEventListeners;
-    private LinkedList<OnMagneticFieldEventListener> onMagneticSensorEventListeners;
+    private final LinkedList<OnAccelerometerEventListener> onAccelerometerEventListeners;
+    private final LinkedList<OnGyroscopeEventListener> onGyroscopeEventListeners;
+    private final LinkedList<OnMagneticFieldEventListener> onMagneticSensorEventListeners;
 
-    private Sensor accelerometer;
-    private Sensor gyroscope;
-    private Sensor magneticSensor;
+    private final Sensor accelerometer;
+    private final Sensor gyroscope;
+    private final Sensor magneticSensor;
 
 
     public EventDistributor(SensorManager pSensorManager) {

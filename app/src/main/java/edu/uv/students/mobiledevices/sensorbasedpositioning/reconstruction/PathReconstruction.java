@@ -1,7 +1,6 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction;
 
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.DirectionData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.PathData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.StepData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.StepLengthData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnDirectionChangedListener;
@@ -18,7 +17,7 @@ public class PathReconstruction implements
         OnStepLengthChangedListener,
         OnStepListener {
 
-    private OnPathChangedListener pathChangedListener;
+    private final OnPathChangedListener pathChangedListener;
 
     public PathReconstruction(OnPathChangedListener pListener) {
         pathChangedListener = pListener;
