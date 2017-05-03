@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">SensorbasedPositioning</string>
+    <string name="app_name">Sensorbased Positioning</string>
+    <string name="error_missing_sensors">Not all needed sensors are present on this devise.</string>
 </resources>
