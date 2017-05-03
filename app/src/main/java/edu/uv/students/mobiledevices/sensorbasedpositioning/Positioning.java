@@ -1,11 +1,11 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning;
 
-import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
 
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.DirectionReconstruction;
@@ -14,7 +14,7 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.PathR
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepLengthReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.visualization.ProcessingVisualization;
-public class Positioning extends Activity {
+public class Positioning extends AppCompatActivity {
 
     private EventDistributor eventDistributor;
 
