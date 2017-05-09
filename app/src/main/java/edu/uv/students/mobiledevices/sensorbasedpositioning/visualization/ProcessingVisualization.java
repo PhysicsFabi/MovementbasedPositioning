@@ -19,7 +19,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         background(0xFFFFFFFF);
         textAlign(CENTER, CENTER);
         textSize(0.2f*height);
-        text("Hello from Processing", 0 ,0, width, height);
+        text("Hello from Jaime", 0 ,0, width, height);
         fill(0xFF000000);
         if (mousePressed) {
             ellipse(mouseX, mouseY, 50, 50);
