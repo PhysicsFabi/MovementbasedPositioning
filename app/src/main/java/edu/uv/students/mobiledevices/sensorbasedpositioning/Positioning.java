@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.DirectionReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.EventDistributor;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.EventEmulator;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.PathReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepLengthReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepReconstruction;
@@ -49,7 +50,17 @@ public class Positioning extends AppCompatActivity implements SensorEventListene
         }
         initProcessing();
         initReconstruction();
-        initSensors();
+
+        // Choose either to init the real sensors
+        // or, for testing, use the event emulation
+        //initSensors();
+        initEventEmulation();
+    }
+
+    private void initEventEmulation() {
+        EventEmulator eventEmulator = new EventEmulator(eventDistributor);
+        // implement all the emulation in the EventEmulator class and choose one of them here
+        eventEmulator.startEmulation01();
     }
 
     private void initSensors() {

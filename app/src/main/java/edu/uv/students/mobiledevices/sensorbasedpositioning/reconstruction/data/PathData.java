@@ -1,5 +1,6 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data;
 
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.apache.commons.math3.linear.RealVector;
 
 import java.util.Stack;
@@ -14,7 +15,7 @@ public class PathData {
      * x is East direction
      * y is South direction
      */
-    double angle;
+    public double angle;
 
     /**
      * Positions as 2D vectors
@@ -23,5 +24,11 @@ public class PathData {
      * y is South direction
      * Units are meters
      */
-    Stack<RealVector> positions;
+    public Stack<Vector2D> positions;
+
+    public PathData() {
+        angle = 0.0;
+        positions = new Stack<>();
+        positions.add(new Vector2D(0,0));
+    }
 }
