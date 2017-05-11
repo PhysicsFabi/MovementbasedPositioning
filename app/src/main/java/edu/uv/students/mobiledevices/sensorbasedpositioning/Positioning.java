@@ -3,6 +3,8 @@ package edu.uv.students.mobiledevices.sensorbasedpositioning;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -13,8 +15,11 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.Event
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.PathReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepLengthReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnAccelerometerEventListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnGyroscopeEventListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnMagneticFieldEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.visualization.ProcessingVisualization;
-public class Positioning extends AppCompatActivity {
+public class Positioning extends AppCompatActivity implements SensorEventListener {
 
     private EventDistributor eventDistributor;
 
@@ -27,16 +32,33 @@ public class Positioning extends AppCompatActivity {
 
     private ProcessingVisualization processingVisualization;
 
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private Sensor gyroscope;
+    private Sensor magneticSensor;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_positioning);
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if(!areAllRequiredSensorsPresent()) {
             ((TextView) findViewById(R.id.positioning_errorTV)).setText(R.string.error_missing_sensors);
             return;
         }
         initProcessing();
         initReconstruction();
+        initSensors();
+    }
+
+    private void initSensors() {
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        magneticSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, magneticSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     private void initProcessing() {
@@ -48,7 +70,6 @@ public class Positioning extends AppCompatActivity {
     }
 
     private boolean areAllRequiredSensorsPresent() {
-        SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         return
             sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
             && sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null
@@ -81,6 +102,22 @@ public class Positioning extends AppCompatActivity {
 
         // processing drawing
         eventDistributor.registerOnPathChangedListener(processingVisualization);
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent pEvent) {
+        if(pEvent.sensor==accelerometer) {
+            eventDistributor.onAccelerometerEvent(pEvent.values[0], pEvent.values[1], pEvent.values[2], pEvent.timestamp, pEvent.accuracy);
+        } else if(pEvent.sensor==gyroscope) {
+            eventDistributor.onGyroscopeEvent(pEvent.values[0], pEvent.values[1], pEvent.values[2], pEvent.timestamp, pEvent.accuracy);
+        } else if(pEvent.sensor==magneticSensor) {
+            eventDistributor.onMagneticFieldEvent(pEvent.values[0], pEvent.values[1], pEvent.values[2], pEvent.timestamp, pEvent.accuracy);
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
     }
 
 }

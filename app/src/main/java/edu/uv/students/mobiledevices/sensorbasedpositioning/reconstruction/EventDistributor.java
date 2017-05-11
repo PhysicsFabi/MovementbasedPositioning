@@ -30,7 +30,9 @@ public class EventDistributor implements
         OnStepListener,
         OnDirectionChangedListener,
         OnStepLengthChangedListener,
-        SensorEventListener {
+        OnAccelerometerEventListener,
+        OnGyroscopeEventListener,
+        OnMagneticFieldEventListener {
 
     private final LinkedList<OnPathChangedListener> onPathChangedListeners;
     private final LinkedList<OnStepListener> onStepListeners;
@@ -40,10 +42,6 @@ public class EventDistributor implements
     private final LinkedList<OnAccelerometerEventListener> onAccelerometerEventListeners;
     private final LinkedList<OnGyroscopeEventListener> onGyroscopeEventListeners;
     private final LinkedList<OnMagneticFieldEventListener> onMagneticSensorEventListeners;
-
-    private final Sensor accelerometer;
-    private final Sensor gyroscope;
-    private final Sensor magneticSensor;
 
 
     public EventDistributor(SensorManager pSensorManager) {
@@ -55,13 +53,6 @@ public class EventDistributor implements
         onAccelerometerEventListeners = new LinkedList<>();
         onGyroscopeEventListeners = new LinkedList<>();
         onMagneticSensorEventListeners = new LinkedList<>();
-
-        accelerometer = pSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        gyroscope = pSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        magneticSensor = pSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        pSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-        pSensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
-        pSensorManager.registerListener(this, magneticSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     public void registerOnPathChangedListener(OnPathChangedListener pListener) {
@@ -117,21 +108,20 @@ public class EventDistributor implements
     }
 
     @Override
-    public void onSensorChanged(SensorEvent pEvent) {
-        if(pEvent.sensor==accelerometer) {
-            for(OnAccelerometerEventListener listener : onAccelerometerEventListeners)
-                listener.onAccelerometerEvent(pEvent.values[0], pEvent.values[1], pEvent.values[2], pEvent.timestamp, pEvent.accuracy);
-        } else if(pEvent.sensor==gyroscope) {
-            for(OnGyroscopeEventListener listener : onGyroscopeEventListeners)
-                listener.onGyroscopeEvent(pEvent.values[0], pEvent.values[1], pEvent.values[2], pEvent.timestamp, pEvent.accuracy);
-        } else if(pEvent.sensor==magneticSensor) {
-            for(OnMagneticFieldEventListener listener : onMagneticSensorEventListeners)
-                listener.onMagneticFieldEvent(pEvent.values[0], pEvent.values[1], pEvent.values[2], pEvent.timestamp, pEvent.accuracy);
-        }
+    public void onGyroscopeEvent(float pX, float pY, float pZ, long pTimeStamp_ns, int pAccuracy) {
+        for(OnGyroscopeEventListener listener : onGyroscopeEventListeners)
+            listener.onGyroscopeEvent(pX, pY, pZ, pTimeStamp_ns, pAccuracy);
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    public void onAccelerometerEvent(float pX, float pY, float pZ, long pTimeStamp_ns, int pAccuracy) {
+        for(OnAccelerometerEventListener listener : onAccelerometerEventListeners)
+            listener.onAccelerometerEvent(pX, pY, pZ, pTimeStamp_ns, pAccuracy);
+    }
 
+    @Override
+    public void onMagneticFieldEvent(float pX, float pY, float pZ, long pTimeStamp_ns, int pAccuracy) {
+        for(OnMagneticFieldEventListener listener : onMagneticSensorEventListeners)
+            listener.onMagneticFieldEvent(pX, pY, pZ, pTimeStamp_ns, pAccuracy);
     }
 }
