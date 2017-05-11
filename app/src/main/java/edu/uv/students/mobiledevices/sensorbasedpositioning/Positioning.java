@@ -16,9 +16,6 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.Event
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.PathReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepLengthReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnAccelerometerEventListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnGyroscopeEventListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnMagneticFieldEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.visualization.ProcessingVisualization;
 public class Positioning extends AppCompatActivity implements SensorEventListener {
 
@@ -51,7 +48,7 @@ public class Positioning extends AppCompatActivity implements SensorEventListene
         initProcessing();
         initReconstruction();
 
-        // Choose either to init the real sensors
+        // Choose either to initialize the real sensors
         // or, for testing, use the event emulation
         //initSensors();
         initEventEmulation();
@@ -59,8 +56,9 @@ public class Positioning extends AppCompatActivity implements SensorEventListene
 
     private void initEventEmulation() {
         EventEmulator eventEmulator = new EventEmulator(eventDistributor);
-        // implement all the emulation in the EventEmulator class and choose one of them here
-        eventEmulator.startEmulation01();
+        // the EventEmulator provides different emulations for testing purposes
+        // eventEmulator.startEmulation01();
+        eventEmulator.startEmulationLoadedFromFile(getResources().openRawResource(R.raw.walking_in_flat),(long)(3*1e9));
     }
 
     private void initSensors() {

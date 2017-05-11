@@ -40,6 +40,6 @@ public class PathReconstruction implements
         PathData pathData = new PathData();
         // reconstruct path
         // put reconstruction int pathData
-        pathChangedListener.onPathChanged(pathData);
+        // pathChangedListener.onPathChanged(pathData);
     }
 }

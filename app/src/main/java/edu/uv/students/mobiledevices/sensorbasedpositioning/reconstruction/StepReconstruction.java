@@ -21,10 +21,9 @@ public class StepReconstruction implements OnAccelerometerEventListener {
 
     @Override
     public void onAccelerometerEvent(float pX, float pY, float pZ, long pTimeStamp_ns, int pAccuracy) {
-        //Log.i(Positioning.LOG_TAG, ""+pX+" "+pY+" "+pZ);
-        StepData stepData = new StepData();
+        // StepData stepData = new StepData();
         // reconstruct Step
-        // put everthing into stepData
-        onStepListener.onStep(stepData);
+        // put everything into stepData
+        // onStepListener.onStep(stepData);
     }
 }
