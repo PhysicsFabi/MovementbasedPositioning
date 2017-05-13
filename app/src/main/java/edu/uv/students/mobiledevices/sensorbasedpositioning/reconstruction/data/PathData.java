@@ -12,7 +12,9 @@ import java.util.Stack;
 
 public class PathData {
     /**
-     * Angle counter clockwise in a right handed coordinate system
+     * Angle
+     * in radians
+     * counter clockwise in a right handed coordinate system measured form the x-axis
      * x is East direction
      * y is South direction
      */
