@@ -1,4 +1,4 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepLengthReconstruction;
 
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.StepData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnAccelerometerEventListener;

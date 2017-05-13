@@ -10,12 +10,12 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.TextView;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.DirectionReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.DirectionReconstruction.DirectionReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.EventDistributor;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.EventEmulator;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.PathReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepLengthReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.EventEmulation.EventEmulator;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.PathReconstruction.PathReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepLengthReconstruction.StepLengthReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepReconstruction.StepReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.visualization.ProcessingVisualization;
 public class Positioning extends AppCompatActivity implements SensorEventListener {
 
@@ -46,6 +46,7 @@ public class Positioning extends AppCompatActivity implements SensorEventListene
             return;
         }
         initProcessing();
+
         initReconstruction();
 
         // Choose either to initialize the real sensors
@@ -57,8 +58,8 @@ public class Positioning extends AppCompatActivity implements SensorEventListene
     private void initEventEmulation() {
         EventEmulator eventEmulator = new EventEmulator(eventDistributor);
         // the EventEmulator provides different emulations for testing purposes
-        // eventEmulator.startEmulation01();
-        eventEmulator.startEmulationLoadedFromFile(getResources().openRawResource(R.raw.walking_in_flat),(long)(3*1e9));
+        eventEmulator.startEmulation01();
+        // eventEmulator.startEmulationLoadedFromFile(getResources().openRawResource(R.raw.walking_in_flat),(long)(3*1e9));
     }
 
     private void initSensors() {
@@ -73,6 +74,7 @@ public class Positioning extends AppCompatActivity implements SensorEventListene
     private void initProcessing() {
         FragmentManager fragmentManager = getFragmentManager();
         processingVisualization = new ProcessingVisualization();
+        processingVisualization.setContext(getApplicationContext());
         fragmentManager.beginTransaction()
                 .replace(R.id.ProcessingContainer, processingVisualization)
                 .commit();
@@ -91,6 +93,7 @@ public class Positioning extends AppCompatActivity implements SensorEventListene
         directionReconstruction = new DirectionReconstruction(eventDistributor);
         stepLengthReconstruction = new StepLengthReconstruction(eventDistributor);
         pathReconstruction = new PathReconstruction(eventDistributor);
+        processingVisualization.setOnResetListener(eventDistributor);
         initEventDistribution();
     }
 
@@ -108,6 +111,7 @@ public class Positioning extends AppCompatActivity implements SensorEventListene
         eventDistributor.registerOnDirectionChangedListener(pathReconstruction);
         eventDistributor.registerOnStepLengthChangedListener(pathReconstruction);
         eventDistributor.registerOnStepListener(pathReconstruction);
+        eventDistributor.registerOnResetListener(pathReconstruction);
 
         // processing drawing
         eventDistributor.registerOnPathChangedListener(processingVisualization);

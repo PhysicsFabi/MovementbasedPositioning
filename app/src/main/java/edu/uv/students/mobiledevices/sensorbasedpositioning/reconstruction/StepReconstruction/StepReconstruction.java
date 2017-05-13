@@ -1,4 +1,4 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepReconstruction;
 
 import android.util.Log;
 

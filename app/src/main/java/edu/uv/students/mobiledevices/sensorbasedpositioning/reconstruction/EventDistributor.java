@@ -1,8 +1,5 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction;
 
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
 import java.util.LinkedList;
@@ -16,6 +13,7 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.inter
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnGyroscopeEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnMagneticFieldEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnPathChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnResetListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnStepLengthChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnStepListener;
 
@@ -32,7 +30,8 @@ public class EventDistributor implements
         OnStepLengthChangedListener,
         OnAccelerometerEventListener,
         OnGyroscopeEventListener,
-        OnMagneticFieldEventListener {
+        OnMagneticFieldEventListener,
+        OnResetListener {
 
     private final LinkedList<OnPathChangedListener> onPathChangedListeners;
     private final LinkedList<OnStepListener> onStepListeners;
@@ -42,6 +41,8 @@ public class EventDistributor implements
     private final LinkedList<OnAccelerometerEventListener> onAccelerometerEventListeners;
     private final LinkedList<OnGyroscopeEventListener> onGyroscopeEventListeners;
     private final LinkedList<OnMagneticFieldEventListener> onMagneticSensorEventListeners;
+
+    private final LinkedList<OnResetListener> onResetListeners;
 
 
     public EventDistributor(SensorManager pSensorManager) {
@@ -53,6 +54,8 @@ public class EventDistributor implements
         onAccelerometerEventListeners = new LinkedList<>();
         onGyroscopeEventListeners = new LinkedList<>();
         onMagneticSensorEventListeners = new LinkedList<>();
+
+        onResetListeners = new LinkedList<>();
     }
 
     public void registerOnPathChangedListener(OnPathChangedListener pListener) {
@@ -70,6 +73,11 @@ public class EventDistributor implements
     public void registerOnStepLengthChangedListener(OnStepLengthChangedListener pListener) {
         onStepLengthChangedListeners.add(pListener);
     }
+
+    public void registerOnResetListener(OnResetListener pListener) {
+        onResetListeners.add(pListener);
+    }
+
 
     public void registerAccelerometerEventListener(OnAccelerometerEventListener pListener) {
         onAccelerometerEventListeners.add(pListener);
@@ -105,6 +113,12 @@ public class EventDistributor implements
     public void onStepLengthChanged(StepLengthData pStepLengthData) {
         for(OnStepLengthChangedListener listener : onStepLengthChangedListeners)
             listener.onStepLengthChanged(pStepLengthData);
+    }
+
+    @Override
+    public void onReset() {
+        for(OnResetListener listener : onResetListeners)
+            listener.onReset();
     }
 
     @Override

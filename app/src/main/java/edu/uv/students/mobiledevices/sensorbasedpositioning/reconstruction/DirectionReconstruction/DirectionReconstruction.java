@@ -1,4 +1,4 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.DirectionReconstruction;
 
 import android.util.Log;
 

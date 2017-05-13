@@ -1,4 +1,4 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.EventEmulation;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -22,7 +22,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import edu.uv.students.mobiledevices.sensorbasedpositioning.Positioning;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.EventDistributor;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.PathData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.StepData;
 
 /**
  * Created by Fabi on 11.05.2017.
@@ -78,7 +80,7 @@ public class EventEmulator {
     /**
      * Loads captured sensor events from a file and emulates them on this device
      * The file format ist
-     * Column 0: On of {ACCELEROMETER, GYROSCOPE, MAGNETIC_FIELD} (STRING)
+     * Column 0: One of {ACCELEROMETER, GYROSCOPE, MAGNETIC_FIELD} (STRING)
      * Column 1: The time in nanoseconds (LONG)
      * Column 2-4: the sensor data (FLOAT)
      * Column separator: "," without spaces
