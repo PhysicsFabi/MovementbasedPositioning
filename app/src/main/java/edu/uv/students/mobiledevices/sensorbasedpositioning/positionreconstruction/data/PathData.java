@@ -1,10 +1,8 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-import org.apache.commons.math3.linear.RealVector;
 
 import java.util.LinkedList;
-import java.util.Stack;
 
 /**
  * Created by Fabi on 02.05.2017.

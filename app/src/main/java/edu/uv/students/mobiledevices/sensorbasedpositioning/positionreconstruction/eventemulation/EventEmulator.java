@@ -1,17 +1,11 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.EventEmulation;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.eventemulation;
 
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
 import android.hardware.SensorManager;
 import android.util.Log;
 
-import org.apache.commons.math3.analysis.function.Floor;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -22,16 +16,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import edu.uv.students.mobiledevices.sensorbasedpositioning.Positioning;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.EventDistributor;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.PathData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.StepData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.PositionReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.PathData;
 
 /**
  * Created by Fabi on 11.05.2017.
  */
 
 public class EventEmulator {
-    private EventDistributor eventDistributor;
+    private PositionReconstruction positionReconstruction;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     enum SensorEventType {
@@ -60,8 +53,8 @@ public class EventEmulator {
     private static final String COLUMN_SEPARATOR = ",";
 
 
-    public EventEmulator(EventDistributor eventDistributor) {
-        this.eventDistributor = eventDistributor;
+    public EventEmulator(PositionReconstruction positionReconstruction) {
+        this.positionReconstruction = positionReconstruction;
     }
 
     private SensorEventType mapStringToEventType(String pString) {
@@ -111,7 +104,7 @@ public class EventEmulator {
                     scheduler.schedule(new Runnable() {
                         @Override
                         public void run() {
-                            eventDistributor.onAccelerometerEvent(
+                            positionReconstruction.onAccelerometerEvent(
                                     sensorEvent.values[0],
                                     sensorEvent.values[1],
                                     sensorEvent.values[2],
@@ -124,7 +117,7 @@ public class EventEmulator {
                     scheduler.schedule(new Runnable() {
                         @Override
                         public void run() {
-                            eventDistributor.onGyroscopeEvent(
+                            positionReconstruction.onGyroscopeEvent(
                                     sensorEvent.values[0],
                                     sensorEvent.values[1],
                                     sensorEvent.values[2],
@@ -137,7 +130,7 @@ public class EventEmulator {
                     scheduler.schedule(new Runnable() {
                         @Override
                         public void run() {
-                            eventDistributor.onMagneticFieldEvent(
+                            positionReconstruction.onMagneticFieldEvent(
                                     sensorEvent.values[0],
                                     sensorEvent.values[1],
                                     sensorEvent.values[2],
@@ -161,7 +154,7 @@ public class EventEmulator {
         scheduler.schedule(new Runnable() {
             @Override
             public void run() {
-                eventDistributor.onPathChanged(pathData);
+                positionReconstruction.onPathChanged(pathData);
             }
         }, startTimePaddingMs, TimeUnit.MILLISECONDS);
 
@@ -169,7 +162,7 @@ public class EventEmulator {
             @Override
             public void run() {
                 pathData.positions.add(new Vector2D(1,0));
-                eventDistributor.onPathChanged(pathData);
+                positionReconstruction.onPathChanged(pathData);
             }
         }, startTimePaddingMs+1000, TimeUnit.MILLISECONDS);
 
@@ -177,7 +170,7 @@ public class EventEmulator {
             @Override
             public void run() {
                 pathData.positions.add(new Vector2D(1,0));
-                eventDistributor.onPathChanged(pathData);
+                positionReconstruction.onPathChanged(pathData);
             }
         }, startTimePaddingMs+2000, TimeUnit.MILLISECONDS);
 
@@ -185,7 +178,7 @@ public class EventEmulator {
             @Override
             public void run() {
                 pathData.positions.add(new Vector2D(2,0));
-                eventDistributor.onPathChanged(pathData);
+                positionReconstruction.onPathChanged(pathData);
             }
         }, startTimePaddingMs+3000, TimeUnit.MILLISECONDS);
 
@@ -193,7 +186,7 @@ public class EventEmulator {
             @Override
             public void run() {
                 pathData.positions.add(new Vector2D(3,0));
-                eventDistributor.onPathChanged(pathData);
+                positionReconstruction.onPathChanged(pathData);
             }
         }, startTimePaddingMs+4000, TimeUnit.MILLISECONDS);
 
@@ -201,7 +194,7 @@ public class EventEmulator {
             @Override
             public void run() {
                 pathData.angle = 2.0*Math.PI/4.0;
-                eventDistributor.onPathChanged(pathData);
+                positionReconstruction.onPathChanged(pathData);
             }
         }, startTimePaddingMs+4250, TimeUnit.NANOSECONDS);
 
@@ -209,7 +202,7 @@ public class EventEmulator {
             @Override
             public void run() {
                 pathData.angle = 2*2.0*Math.PI/4.0;
-                eventDistributor.onPathChanged(pathData);
+                positionReconstruction.onPathChanged(pathData);
             }
         }, startTimePaddingMs+4500, TimeUnit.MILLISECONDS);
 
@@ -217,7 +210,7 @@ public class EventEmulator {
             @Override
             public void run() {
                 pathData.angle = 3*2.0*Math.PI/4.0;
-                eventDistributor.onPathChanged(pathData);
+                positionReconstruction.onPathChanged(pathData);
             }
         }, startTimePaddingMs+4750, TimeUnit.MILLISECONDS);
 
@@ -225,7 +218,7 @@ public class EventEmulator {
             @Override
             public void run() {
                 pathData.angle = 4*2.0*Math.PI/4.0;
-                eventDistributor.onPathChanged(pathData);
+                positionReconstruction.onPathChanged(pathData);
             }
         }, startTimePaddingMs+5000, TimeUnit.MILLISECONDS);
     }

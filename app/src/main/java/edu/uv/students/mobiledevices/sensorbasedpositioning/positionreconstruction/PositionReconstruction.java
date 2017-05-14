@@ -1,21 +1,23 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction;
-
-import android.hardware.SensorManager;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction;
 
 import java.util.LinkedList;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.DirectionData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.PathData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.StepData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.StepLengthData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnAccelerometerEventListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnDirectionChangedListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnGyroscopeEventListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnMagneticFieldEventListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnPathChangedListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnResetListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnStepLengthChangedListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnStepListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.direction.DirectionReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.step.StepReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.DirectionData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.PathData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.StepData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.StepLengthData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnAccelerometerEventListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnDirectionChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnGyroscopeEventListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnMagneticFieldEventListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnResetListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepLengthChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepListener;
 
 /**
  * Created by Fabi on 02.05.2017.
@@ -23,7 +25,7 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.inter
  * Distributes all the events (sensors, steps, ...) that happen during the program run.
  */
 
-public class EventDistributor implements
+public class PositionReconstruction implements
         OnPathChangedListener,
         OnStepListener,
         OnDirectionChangedListener,
@@ -44,8 +46,13 @@ public class EventDistributor implements
 
     private final LinkedList<OnResetListener> onResetListeners;
 
+    private StepReconstruction stepReconstruction;
+    private DirectionReconstruction directionReconstruction;
+    private StepLengthReconstruction stepLengthReconstruction;
+    private PathReconstruction pathReconstruction;
 
-    public EventDistributor(SensorManager pSensorManager) {
+
+    public PositionReconstruction() {
         onPathChangedListeners = new LinkedList<>();
         onStepListeners = new LinkedList<>();
         onDirectionChangedListeners = new LinkedList<>();
@@ -56,6 +63,29 @@ public class EventDistributor implements
         onMagneticSensorEventListeners = new LinkedList<>();
 
         onResetListeners = new LinkedList<>();
+
+        stepReconstruction = new StepReconstruction(this);
+        directionReconstruction = new DirectionReconstruction(this);
+        stepLengthReconstruction = new StepLengthReconstruction(this);
+        pathReconstruction = new PathReconstruction(this);
+        initEventDistribution();
+    }
+
+    private void initEventDistribution() {
+        // step reconstruction
+        registerAccelerometerEventListener(stepReconstruction);
+
+        // direction reconstruction
+        registerGyroscopeEventListener(directionReconstruction);
+        registerMagneticFieldEventListener(directionReconstruction);
+
+        //step length reconstruction
+
+        // path reconstruction
+        registerOnDirectionChangedListener(pathReconstruction);
+        registerOnStepLengthChangedListener(pathReconstruction);
+        registerOnStepListener(pathReconstruction);
+        registerOnResetListener(pathReconstruction);
     }
 
     public void registerOnPathChangedListener(OnPathChangedListener pListener) {

@@ -1,11 +1,7 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.StepReconstruction;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.step;
 
-import android.util.Log;
-
-import edu.uv.students.mobiledevices.sensorbasedpositioning.Positioning;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.StepData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnAccelerometerEventListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnStepListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnAccelerometerEventListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepListener;
 
 /**
  * Created by Fabi on 02.05.2017.

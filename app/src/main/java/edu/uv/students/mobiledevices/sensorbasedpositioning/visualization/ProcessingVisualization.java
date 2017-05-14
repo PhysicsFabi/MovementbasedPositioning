@@ -1,30 +1,21 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.visualization;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.support.v4.content.FileProvider;
-import android.util.Log;
-import android.view.View;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.Positioning;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.R;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.data.PathData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnPathChangedListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.reconstruction.interfaces.OnResetListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.PathData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnResetListener;
 import processing.core.*;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.util.*;
 
 import java.util.HashMap;
 import java.util.ArrayList;
-
-import static android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION;
 
 public class ProcessingVisualization extends PApplet implements OnPathChangedListener {
 
