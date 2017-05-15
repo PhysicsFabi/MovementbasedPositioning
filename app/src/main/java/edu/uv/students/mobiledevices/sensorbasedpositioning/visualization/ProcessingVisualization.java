@@ -3,12 +3,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v4.content.FileProvider;
+import android.util.Log;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
+import edu.uv.students.mobiledevices.sensorbasedpositioning.Positioning;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.PathData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnResetListener;
 import processing.core.*;
 
 import java.io.File;
@@ -22,7 +23,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
     private FiniteStateMachine sm;
     private State initialState;
 
-    static final float minShownMeters = 10;
+    private static final float minShownMeters = 10;
     private LinkedList<Vector2D> path;
     private float direction;
 
@@ -43,9 +44,10 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
     public void onPathChanged(PathData pPathData) {
         path = pPathData.positions;
         direction = (float)pPathData.angle;
+
     }
 
-    class InitialState extends State {
+    private class InitialState extends State {
 
         private Hud hud;
         private BackgroundGrid backgroundGrid;
@@ -99,7 +101,6 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         reset();
     }
 
-
     public void draw() {
         sm.draw();
     }
@@ -107,8 +108,9 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
     private void reset() {
         sm=new FiniteStateMachine();
         sm.addState(new InitialState());
-        if(onResetListener!=null)
-            onResetListener.onReset();
+        path = new LinkedList<>();
+        path.add(new Vector2D(0,0));
+        direction = 0.0f;
     }
 
     private void saveScreenshot() {
@@ -127,7 +129,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             context.startActivity(Intent.createChooser(intentShareFile, "Share File"));
         }
     }
-    class BackgroundGrid implements Drawable {
+    private class BackgroundGrid implements Drawable {
         final int w;
         final int h;
         final float w_m;
@@ -171,7 +173,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             popMatrix();
         }
     }
-    class Figurine implements Drawable {
+    private class Figurine implements Drawable {
         PImage userImg;
 
         Figurine() {
@@ -184,7 +186,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             imageMode(CORNER);
         }
     }
-    class State implements Drawable {
+    private class State implements Drawable {
         final String ID;
         protected ArrayList<Drawable> drawables;
 
@@ -212,7 +214,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
 
     }
 
-    class StateWithBGImage extends State {
+    private class StateWithBGImage extends State {
         PImage bgImage;
 
         StateWithBGImage(String pId,String pFileName) {
@@ -234,12 +236,12 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    interface TransitAnimation {
+    private interface TransitAnimation {
         boolean drawAnimatedTransit(State fromState, State toState);
         void reset();
     }
 
-    class FadingTransitAnimation implements TransitAnimation {
+    private class FadingTransitAnimation implements TransitAnimation {
         int durationMilliSec;
         int fadingColor;
 
@@ -296,7 +298,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    class FiniteStateMachine implements Drawable {
+    private class FiniteStateMachine implements Drawable {
         HashMap<String,State> states;
         State currentState;
         State nextState;
@@ -363,7 +365,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    class TransitRectButton extends RectButton implements OnRectButtonEventListener {
+    private class TransitRectButton extends RectButton implements OnRectButtonEventListener {
         String transitToStateId;
         FiniteStateMachine finiteStateMachine;
         TransitAnimation transitAnimation;
@@ -398,7 +400,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         public void onMousePressed(RectButton pButton){}
         public void onMouseReleased(RectButton pButton){}
     }
-    class Hud implements Drawable {
+    private class Hud implements Drawable {
 
         int w;
         int h;
@@ -431,7 +433,11 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
                 public void onMouseReleased(RectButton pButton){}
             });
             resetButton = new RectButton("Reset", w-buttonW-buttonPadding, h-buttonPadding-buttonH, buttonW, buttonH, new OnRectButtonEventListener(){
-                public void onMouseClicked(RectButton pButton){ reset(); }
+                public void onMouseClicked(RectButton pButton){
+                    reset();
+                    if(onResetListener!=null)
+                        onResetListener.onReset();
+                }
                 public void onMouseOver(RectButton pButton){}
                 public void onMouseOut(RectButton pButton){}
                 public void onMousePressed(RectButton pButton){}
@@ -448,7 +454,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
     }
 
 
-    interface MouseProspect {
+    private interface MouseProspect {
         boolean isInside(float pX, float pY);
         // methods are called every frame
         void notifyHovered();
@@ -457,7 +463,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         void notifyReleased();
     }
 
-    interface OnRectButtonEventListener {
+    private interface OnRectButtonEventListener {
         // methods are called once (and not every frame)
         // onMouseClick is not fired for disabled buttons
         void onMouseClicked(RectButton pButton);
@@ -467,18 +473,18 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         void onMouseReleased(RectButton pButton);
     }
 
-    static class ButtonRenderState {
+    private static class ButtonRenderState {
         static final int BT_NORMAL=0;
         static final int BT_HOVERED=1;
         static final int BT_PRESSED=2;
         static final int BT_DISABLED=3;
     }
 
-    interface RectButtonRenderer {
+    private interface RectButtonRenderer {
         void render(float pButtonX, float pButtonY, float pButtonWidth, float pButtonHeight, int pButtonState);
     }
 
-    public void handleMouseProspect(MouseProspect pMouseProspects) {
+    private void handleMouseProspect(MouseProspect pMouseProspects) {
         if(pMouseProspects.isInside(mouseX,mouseY)) {
             pMouseProspects.notifyHovered();
             if(mousePressed)
@@ -490,7 +496,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    class RectButtonRendererBase implements RectButtonRenderer {
+    private class RectButtonRendererBase implements RectButtonRenderer {
         int[] bgColors;
         float[] strokeWeightsRelativeToW;
         int[] strokeColors;
@@ -517,7 +523,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    class TextRectButtonRenderer extends RectButtonRendererBase {
+    private class TextRectButtonRenderer extends RectButtonRendererBase {
         String[] texts;
         int[] textColors;
         PFont[] fonts;
@@ -689,7 +695,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    class ImageRectButtonRenderer implements RectButtonRenderer {
+    private class ImageRectButtonRenderer implements RectButtonRenderer {
         PImage[] images;
         float[] imagePaddingsLeftRelativeToW;
         float[] imagePaddingsTopRelativeToH;
@@ -765,7 +771,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    class RectButton implements MouseProspect, Drawable {
+    private class RectButton implements MouseProspect, Drawable {
         float x;
         float y;
         float w;
@@ -898,23 +904,23 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
     float metersToPixelsScaleFactor;
     float pixelsToMetersScaleFactor;
 
-    public void initMetersToPixelsConversion() {
+    private void initMetersToPixelsConversion() {
         metersToPixelsScaleFactor = min(width,height)/minShownMeters;
         pixelsToMetersScaleFactor = 1/metersToPixelsScaleFactor;
         width_meter = pixelsToMeters(width);
         height_meter = pixelsToMeters(height);
     }
 
-    public float pixelsToMeters(int pixels) {
+    private float pixelsToMeters(int pixels) {
         return pixels*pixelsToMetersScaleFactor;
     }
 
-    public int metersToPixels(float meters) {
+    private int metersToPixels(float meters) {
         return floor(meters*metersToPixelsScaleFactor);
     }
     /** Provides a method that should be called every frame
      */
-    interface Drawable {
+    private interface Drawable {
         void draw();
     }
 
@@ -923,7 +929,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
      *  for all Images that where not created by loadImage(),
      *  but by calls to get(), copy(), etc. This is a workaround.
      */
-    public PImage resize(PImage pImage,int pWidth,int pHeight) {
+    private PImage resize(PImage pImage,int pWidth,int pHeight) {
         if(pHeight==0) {
             pHeight=pImage.height*pWidth/pImage.width;
         } else if(pWidth==0) {
@@ -936,7 +942,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         return img;
     }
 
-    public PImage resizeToFitBox(PImage pImage,int pWidth,int pHeight) {
+    private PImage resizeToFitBox(PImage pImage,int pWidth,int pHeight) {
         float scaleFactorW=(float)pWidth/pImage.width;
         float scaleFactorH=(float)pHeight/pImage.height;
         if(scaleFactorW>scaleFactorH)
@@ -945,7 +951,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             return resize(pImage,floor(pWidth),0);
     }
 
-    public PImage resizeToCoverBox(PImage pImage,int pWidth,int pHeight) {
+    private PImage resizeToCoverBox(PImage pImage,int pWidth,int pHeight) {
         boolean isWidthFitted=((float)pWidth/pImage.width)*pImage.height>=pHeight;
         if(isWidthFitted)
             return resize(pImage,pWidth,0);
@@ -953,7 +959,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             return resize(pImage,0,pHeight);
     }
 
-    public void drawImageInBox(
+    private void drawImageInBox(
             PImage pImage,
             float pX,
             float pY,

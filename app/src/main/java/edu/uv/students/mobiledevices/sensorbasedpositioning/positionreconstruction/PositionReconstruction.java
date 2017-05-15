@@ -15,7 +15,6 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnGyroscopeEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnMagneticFieldEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnResetListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepLengthChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepListener;
 
@@ -32,8 +31,9 @@ public class PositionReconstruction implements
         OnStepLengthChangedListener,
         OnAccelerometerEventListener,
         OnGyroscopeEventListener,
-        OnMagneticFieldEventListener,
-        OnResetListener {
+        OnMagneticFieldEventListener {
+
+    public static String  LOG_TAG = "Position Reconstruction";
 
     private final LinkedList<OnPathChangedListener> onPathChangedListeners;
     private final LinkedList<OnStepListener> onStepListeners;
@@ -49,8 +49,13 @@ public class PositionReconstruction implements
     private StepLengthReconstruction stepLengthReconstruction;
     private PathReconstruction pathReconstruction;
 
+    private String stepSamplesFilesDir;
 
-    public PositionReconstruction() {
+
+    public PositionReconstruction(String pStepSamplesFilesDir) {
+
+        stepSamplesFilesDir = pStepSamplesFilesDir;
+
         onPathChangedListeners = new LinkedList<>();
         onStepListeners = new LinkedList<>();
         onDirectionChangedListeners = new LinkedList<>();
@@ -59,8 +64,26 @@ public class PositionReconstruction implements
         onAccelerometerEventListeners = new LinkedList<>();
         onGyroscopeEventListeners = new LinkedList<>();
         onMagneticSensorEventListeners = new LinkedList<>();
-        reset();
+
+        initReconstructions();
+        initEventDistribution();
+        callInitOnReconstructions();
     }
+
+    private void callInitOnReconstructions() {
+        stepReconstruction.init();
+        directionReconstruction.init();
+        stepLengthReconstruction.init();
+        pathReconstruction.init();
+    }
+
+    private void initReconstructions() {
+        stepReconstruction = new StepReconstruction(this, stepSamplesFilesDir);
+        directionReconstruction = new DirectionReconstruction(this);
+        stepLengthReconstruction = new StepLengthReconstruction(this);
+        pathReconstruction = new PathReconstruction(this);
+    }
+
 
     private void initEventDistribution() {
         // step reconstruction
@@ -76,19 +99,6 @@ public class PositionReconstruction implements
         registerOnDirectionChangedListener(pathReconstruction);
         registerOnStepLengthChangedListener(pathReconstruction);
         registerOnStepListener(pathReconstruction);
-    }
-
-    private void reset() {
-        stepReconstruction = new StepReconstruction(this);
-        directionReconstruction = new DirectionReconstruction(this);
-        stepLengthReconstruction = new StepLengthReconstruction(this);
-        pathReconstruction = new PathReconstruction(this);
-        initEventDistribution();
-        stepReconstruction.init();
-        directionReconstruction.init();
-        stepLengthReconstruction.init();
-        pathReconstruction.init();
-
     }
 
     public void registerOnPathChangedListener(OnPathChangedListener pListener) {
@@ -141,11 +151,6 @@ public class PositionReconstruction implements
     public void onStepLengthChanged(StepLengthData pStepLengthData) {
         for(OnStepLengthChangedListener listener : onStepLengthChangedListeners)
             listener.onStepLengthChanged(pStepLengthData);
-    }
-
-    @Override
-    public void onReset() {
-        reset();
     }
 
     @Override

@@ -196,7 +196,7 @@ public class EventEmulator {
                 pathData.angle = 2.0*Math.PI/4.0;
                 positionReconstruction.onPathChanged(pathData);
             }
-        }, startTimePaddingMs+4250, TimeUnit.NANOSECONDS);
+        }, startTimePaddingMs+4250, TimeUnit.MILLISECONDS);
 
         scheduler.schedule(new Runnable() {
             @Override
