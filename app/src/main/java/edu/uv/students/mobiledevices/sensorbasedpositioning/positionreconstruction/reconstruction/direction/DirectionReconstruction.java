@@ -3,7 +3,6 @@ package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruct
 import android.util.Log;
 
 import edu.uv.students.mobiledevices.sensorbasedpositioning.Positioning;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.DirectionData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnDirectionChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnGyroscopeEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnMagneticFieldEventListener;

@@ -6,10 +6,10 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.step.StepReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.DirectionData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.PathData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.StepData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.StepLengthData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.direction.DirectionData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.step.StepData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnAccelerometerEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnDirectionChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnGyroscopeEventListener;

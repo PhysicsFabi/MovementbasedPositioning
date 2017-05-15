@@ -1,6 +1,5 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.StepLengthData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepLengthChangedListener;
 
 /**

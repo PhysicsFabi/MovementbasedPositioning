@@ -1,4 +1,4 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 

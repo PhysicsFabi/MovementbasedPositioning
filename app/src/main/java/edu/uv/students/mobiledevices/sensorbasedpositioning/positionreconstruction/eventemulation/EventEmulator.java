@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import edu.uv.students.mobiledevices.sensorbasedpositioning.Positioning;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.PositionReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.PathData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathData;
 
 /**
  * Created by Fabi on 11.05.2017.

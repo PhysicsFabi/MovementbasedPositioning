@@ -4,8 +4,6 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.R;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.StepData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnAccelerometerEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepListener;
 

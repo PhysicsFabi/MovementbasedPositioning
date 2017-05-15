@@ -3,12 +3,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.v4.content.FileProvider;
-import android.util.Log;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.Positioning;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.PathData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
 import processing.core.*;
 

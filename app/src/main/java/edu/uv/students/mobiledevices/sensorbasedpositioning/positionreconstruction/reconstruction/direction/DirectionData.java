@@ -1,4 +1,4 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.direction;
 
 /**
  * Created by Fabi on 02.05.2017.

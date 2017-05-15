@@ -2,10 +2,9 @@ package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruct
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.DirectionData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.PathData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.StepData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.data.StepLengthData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.direction.DirectionData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.step.StepData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnDirectionChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepLengthChangedListener;
