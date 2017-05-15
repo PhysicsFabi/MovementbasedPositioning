@@ -235,8 +235,8 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
     }
 
     interface TransitAnimation {
-        public boolean drawAnimatedTransit(State fromState, State toState);
-        public void reset();
+        boolean drawAnimatedTransit(State fromState, State toState);
+        void reset();
     }
 
     class FadingTransitAnimation implements TransitAnimation {
@@ -448,23 +448,23 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
     }
 
 
-    static interface MouseProspect {
-        public boolean isInside(float pX,float pY);
+    interface MouseProspect {
+        boolean isInside(float pX, float pY);
         // methods are called every frame
-        public void notifyHovered();
-        public void notifyNotHovered();
-        public void notifyPressed();
-        public void notifyReleased();
+        void notifyHovered();
+        void notifyNotHovered();
+        void notifyPressed();
+        void notifyReleased();
     }
 
-    static interface OnRectButtonEventListener {
+    interface OnRectButtonEventListener {
         // methods are called once (and not every frame)
         // onMouseClick is not fired for disabled buttons
-        public void onMouseClicked(RectButton pButton);
-        public void onMouseOver(RectButton pButton);
-        public void onMouseOut(RectButton pButton);
-        public void onMousePressed(RectButton pButton);
-        public void onMouseReleased(RectButton pButton);
+        void onMouseClicked(RectButton pButton);
+        void onMouseOver(RectButton pButton);
+        void onMouseOut(RectButton pButton);
+        void onMousePressed(RectButton pButton);
+        void onMouseReleased(RectButton pButton);
     }
 
     static class ButtonRenderState {
@@ -474,8 +474,8 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         static final int BT_DISABLED=3;
     }
 
-    static interface RectButtonRenderer {
-        public void render(float pButtonX,float pButtonY,float pButtonWidth,float pButtonHeight,int pButtonState);
+    interface RectButtonRenderer {
+        void render(float pButtonX, float pButtonY, float pButtonWidth, float pButtonHeight, int pButtonState);
     }
 
     public void handleMouseProspect(MouseProspect pMouseProspects) {
@@ -504,7 +504,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         RectButtonRendererBase() {
             bgColors=new int[]{0xffFFFFFF,0xffFFFFFF,0xff0A81FC,0xffA5A5A5};
             strokeWeightsRelativeToW=new float[]{.002f,0.002f,.004f,.002f};
-            strokeColors=new int[]{0xff000000,0xff000000,0xff000000,0xff959595};;
+            strokeColors=new int[]{0xff000000,0xff000000,0xff000000,0xff959595};
         }
 
         public void render(float pButtonX,float pButtonY,float pButtonWidth,float pButtonHeight,int pButtonRenderState) {
@@ -914,8 +914,8 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
     }
     /** Provides a method that should be called every frame
      */
-    static interface Drawable {
-        public void draw();
+    interface Drawable {
+        void draw();
     }
 
 

@@ -44,8 +44,6 @@ public class PositionReconstruction implements
     private final LinkedList<OnGyroscopeEventListener> onGyroscopeEventListeners;
     private final LinkedList<OnMagneticFieldEventListener> onMagneticSensorEventListeners;
 
-    private final LinkedList<OnResetListener> onResetListeners;
-
     private StepReconstruction stepReconstruction;
     private DirectionReconstruction directionReconstruction;
     private StepLengthReconstruction stepLengthReconstruction;
@@ -61,14 +59,7 @@ public class PositionReconstruction implements
         onAccelerometerEventListeners = new LinkedList<>();
         onGyroscopeEventListeners = new LinkedList<>();
         onMagneticSensorEventListeners = new LinkedList<>();
-
-        onResetListeners = new LinkedList<>();
-
-        stepReconstruction = new StepReconstruction(this);
-        directionReconstruction = new DirectionReconstruction(this);
-        stepLengthReconstruction = new StepLengthReconstruction(this);
-        pathReconstruction = new PathReconstruction(this);
-        initEventDistribution();
+        reset();
     }
 
     private void initEventDistribution() {
@@ -85,7 +76,19 @@ public class PositionReconstruction implements
         registerOnDirectionChangedListener(pathReconstruction);
         registerOnStepLengthChangedListener(pathReconstruction);
         registerOnStepListener(pathReconstruction);
-        registerOnResetListener(pathReconstruction);
+    }
+
+    private void reset() {
+        stepReconstruction = new StepReconstruction(this);
+        directionReconstruction = new DirectionReconstruction(this);
+        stepLengthReconstruction = new StepLengthReconstruction(this);
+        pathReconstruction = new PathReconstruction(this);
+        initEventDistribution();
+        stepReconstruction.init();
+        directionReconstruction.init();
+        stepLengthReconstruction.init();
+        pathReconstruction.init();
+
     }
 
     public void registerOnPathChangedListener(OnPathChangedListener pListener) {
@@ -103,11 +106,6 @@ public class PositionReconstruction implements
     public void registerOnStepLengthChangedListener(OnStepLengthChangedListener pListener) {
         onStepLengthChangedListeners.add(pListener);
     }
-
-    public void registerOnResetListener(OnResetListener pListener) {
-        onResetListeners.add(pListener);
-    }
-
 
     public void registerAccelerometerEventListener(OnAccelerometerEventListener pListener) {
         onAccelerometerEventListeners.add(pListener);
@@ -147,8 +145,7 @@ public class PositionReconstruction implements
 
     @Override
     public void onReset() {
-        for(OnResetListener listener : onResetListeners)
-            listener.onReset();
+        reset();
     }
 
     @Override
