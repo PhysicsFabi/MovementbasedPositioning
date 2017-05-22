@@ -1,8 +1,8 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces;
 
 /**
- * Created by Fabi on 16.05.2017.
+ * Created by Fabi on 22.05.2017.
  */
 
-public interface OnHorizontalDirectionChangedListener {
+public interface OnDownwardsVectorChangedListener {
 }
