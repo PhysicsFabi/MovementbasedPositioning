@@ -12,7 +12,6 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnOrientationChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnSensorAccuracyLowListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepLengthChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.accelerometer.AccelerometerProcessor;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.accelerometer.StepData;
@@ -21,7 +20,6 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.orientation.OrientationReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent;
 
@@ -35,7 +33,6 @@ public class PositionReconstruction implements
         OnPathChangedListener,
         OnStepListener,
         OnOrientationChangedListener,
-        OnStepLengthChangedListener,
         OnMagneticFieldVectorChangedListener,
         OnDownwardsVectorChangedListener,
         OnAccelerometerEventListener,
@@ -46,7 +43,6 @@ public class PositionReconstruction implements
     private final LinkedList<OnPathChangedListener> onPathChangedListeners;
     private final LinkedList<OnStepListener> onStepListeners;
     private final LinkedList<OnOrientationChangedListener> onOrientationChangedListeners;
-    private final LinkedList<OnStepLengthChangedListener> onStepLengthChangedListeners;
     private final LinkedList<OnMagneticFieldVectorChangedListener> onMagneticFieldVectorChangedListeners;
     private final LinkedList<OnDownwardsVectorChangedListener> onDownwardsVectorChangedListeners;
     private final LinkedList<OnSensorAccuracyLowListener> onSensorAccuracyLowListeners;
@@ -68,13 +64,12 @@ public class PositionReconstruction implements
         accelerometerProcessor = new AccelerometerProcessor((long)(3*1e9), 0, this, this);
         magneticFieldProcessor = new MagneticFieldProcessor(this);
         orientationReconstruction = new OrientationReconstruction(this);
-        stepLengthReconstruction = new StepLengthReconstruction(this);
+        stepLengthReconstruction = new StepLengthReconstruction();
         pathReconstruction = new PathReconstruction(this);
 
         onPathChangedListeners = new LinkedList<>();
         onStepListeners = new LinkedList<>();
         onOrientationChangedListeners = new LinkedList<>();
-        onStepLengthChangedListeners = new LinkedList<>();
         onMagneticFieldVectorChangedListeners = new LinkedList<>();
         onDownwardsVectorChangedListeners = new LinkedList<>();
         onSensorAccuracyLowListeners = new LinkedList<>();
@@ -90,6 +85,8 @@ public class PositionReconstruction implements
 
 
     private void initEventDistribution() {
+        //mind the order, the registration order matches the notifying order
+
         // accelerometer
         registerAccelerometerEventListener(accelerometerProcessor);
 
@@ -102,10 +99,10 @@ public class PositionReconstruction implements
 
 
         //step length reconstruction
+        registerOnStepListener(stepLengthReconstruction);
 
         // path reconstruction
         registerOnOrientationChangedListener(pathReconstruction);
-        registerOnStepLengthChangedListener(pathReconstruction);
         registerOnStepListener(pathReconstruction);
     }
 
@@ -131,10 +128,6 @@ public class PositionReconstruction implements
 
     public void registerOnOrientationChangedListener(OnOrientationChangedListener pListener) {
         onOrientationChangedListeners.add(pListener);
-    }
-
-    public void registerOnStepLengthChangedListener(OnStepLengthChangedListener pListener) {
-        onStepLengthChangedListeners.add(pListener);
     }
 
     public void registerAccelerometerEventListener(OnAccelerometerEventListener pListener) {
@@ -165,12 +158,6 @@ public class PositionReconstruction implements
     public void onStep(StepData pStepData) {
         for(OnStepListener listener : onStepListeners)
             listener.onStep(pStepData);
-    }
-
-    @Override
-    public void onStepLengthChanged(StepLengthData pStepLengthData) {
-        for(OnStepLengthChangedListener listener : onStepLengthChangedListeners)
-            listener.onStepLengthChanged(pStepLengthData);
     }
 
     @Override

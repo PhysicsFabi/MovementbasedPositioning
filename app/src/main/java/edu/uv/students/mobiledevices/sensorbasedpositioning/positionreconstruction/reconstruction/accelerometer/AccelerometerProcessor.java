@@ -68,7 +68,7 @@ public class AccelerometerProcessor implements OnAccelerometerEventListener {
         public boolean add(SensorEvent pEvent) {
             Vector3D currentAcceleration_ph = new Vector3D(pEvent.values[0], pEvent.values[1], pEvent.values[2]).subtract(gravityAcceleration_ph);
             double currentDownwardsAcceleration = downwardsNormalized_ph.dotProduct(currentAcceleration_ph);
-            //Log.i("DOWNWARDS EVALUATION", "\t"+pEvent.footDownTimeNs+"\t"+currentDownwardsAcceleration);
+            Log.i("DOWNWARDS EVALUATION", "\t"+pEvent.timeNs+"\t"+currentDownwardsAcceleration);
             boolean add = false;
             boolean newExtreme = false;
             switch (peakType) {
@@ -162,28 +162,10 @@ public class AccelerometerProcessor implements OnAccelerometerEventListener {
             if (currentDivision.peakType == PeakType.DOWN_PEAK && isStepInBuffer()) {
                 StepData stepData = new StepData();
                 stepData.footDownTimeNs = prepreviousDivision.peakTimeNs;
-                /*
-                Vector3D horizontalVelocity_ph0 =
-                        integrateHorizontalAcceleration(
-                                previousDivision.events,
-                                prepreviousDivision.getStartTimeNs(),
-                                prepreviousDivision.getEndTimeNs());
-                Vector3D horizontalVelocity_ph1=
-                        integrateHorizontalAcceleration(
-                                currentDivision.events,
-                                currentDivision.getStartTimeNs(),
-                                currentDivision.peakTimeNs);
-                Vector3D horizontalVelocity_ph = horizontalVelocity_ph0.add(horizontalVelocity_ph1);
-
-                stepData.horizontalDirectionNormalized_ph = horizontalVelocity_ph.getNorm()==0 ? horizontalVelocity_ph : horizontalVelocity_ph.normalize();
-                */
-                /*
-                float[] means = SensorEventsProcessingTools.getValueMeans(currentDivision);
-                Vector3D horizontalAcceleration = new Vector3D(means[0], means[1], means[2]);
-                stepData.horizontalDirectionNormalized_ph = LinearAlgebraTools.projectOnPane(downwardsNormalized_ph, horizontalAcceleration).normalize();
-                */
+                stepData.durationNs = currentDivision.peakTimeNs-stepData.footDownTimeNs;
+                Log.i("STEP TIME", "\t" + ((double)stepData.durationNs/1e9));
                 stepData.horizontalDirectionNormalized_ph = LinearAlgebraTools.projectOnPane(downwardsNormalized_ph, new Vector3D(.0,1.0,.0)).normalize();
-                //Log.i("STEP EVALUATION", "\t" + prepreviousDivision.peakTimeNs);
+                Log.i("STEP EVALUATION", "\t" + prepreviousDivision.peakTimeNs);
                 onStepListener.onStep(stepData);
             }
             prepreviousDivision = previousDivision;
