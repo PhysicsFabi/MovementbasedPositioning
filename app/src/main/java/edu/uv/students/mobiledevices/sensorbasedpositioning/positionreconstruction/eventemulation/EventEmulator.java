@@ -24,7 +24,7 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
  */
 
 public class EventEmulator {
-    private PositionReconstruction positionReconstruction;
+    private final PositionReconstruction positionReconstruction;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     enum SensorEventType {
@@ -32,18 +32,12 @@ public class EventEmulator {
         GYROSCOPE,
         MAGNETIC_FIELD
     }
-    static class SensorEvent {
-        public SensorEventType eventType;
-        public long timeNs;
-        public float[] values;
+    static class SensorEvent extends edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent {
+        public final SensorEventType eventType;
 
         public SensorEvent(SensorEventType pEventType, long timeNs, float pX, float pY, float pZ) {
+            super(timeNs,new float[]{pX, pY, pZ}, SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
             eventType = pEventType;
-            this.timeNs = timeNs;
-            values = new float[3];
-            values[0] = pX;
-            values[1] = pY;
-            values[2] = pZ;
         }
     }
 
@@ -104,12 +98,7 @@ public class EventEmulator {
                     scheduler.schedule(new Runnable() {
                         @Override
                         public void run() {
-                            positionReconstruction.onAccelerometerEvent(
-                                    sensorEvent.values[0],
-                                    sensorEvent.values[1],
-                                    sensorEvent.values[2],
-                                    sensorEvent.timeNs,
-                                    SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+                            positionReconstruction.onAccelerometerEvent(sensorEvent);
                         }
                     }, sensorEvent.timeNs, TimeUnit.NANOSECONDS);
                     break;
@@ -117,12 +106,7 @@ public class EventEmulator {
                     scheduler.schedule(new Runnable() {
                         @Override
                         public void run() {
-                            positionReconstruction.onGyroscopeEvent(
-                                    sensorEvent.values[0],
-                                    sensorEvent.values[1],
-                                    sensorEvent.values[2],
-                                    sensorEvent.timeNs,
-                                    SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+                            positionReconstruction.onGyroscopeEvent(sensorEvent);
                         }
                     }, sensorEvent.timeNs, TimeUnit.NANOSECONDS);
                     break;
@@ -130,12 +114,7 @@ public class EventEmulator {
                     scheduler.schedule(new Runnable() {
                         @Override
                         public void run() {
-                            positionReconstruction.onMagneticFieldEvent(
-                                    sensorEvent.values[0],
-                                    sensorEvent.values[1],
-                                    sensorEvent.values[2],
-                                    sensorEvent.timeNs,
-                                    SensorManager.SENSOR_STATUS_ACCURACY_HIGH);
+                            positionReconstruction.onMagneticFieldEvent(sensorEvent);
                         }
                     }, sensorEvent.timeNs, TimeUnit.NANOSECONDS);
                     break;
@@ -221,5 +200,12 @@ public class EventEmulator {
                 positionReconstruction.onPathChanged(pathData);
             }
         }, startTimePaddingMs+5000, TimeUnit.MILLISECONDS);
+
+        scheduler.schedule(new Runnable() {
+            @Override
+            public void run() {
+                positionReconstruction.onSensorAccuracyLow();
+            }
+        }, startTimePaddingMs+6000, TimeUnit.MILLISECONDS);
     }
 }

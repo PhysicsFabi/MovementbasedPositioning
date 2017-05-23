@@ -1,26 +1,27 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path;
 
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.direction.DirectionData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.step.StepData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnDirectionChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnOrientationChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepLengthChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.accelerometer.StepData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.orientation.OrientationData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthData;
 
 /**
  * Created by Fabi on 02.05.2017.
  */
 
 public class PathReconstruction implements
-        OnDirectionChangedListener,
+        OnOrientationChangedListener,
         OnStepLengthChangedListener,
         OnStepListener{
 
-    private PathData pathData;
-    private DirectionData currentDirectionData;
+    private final PathData pathData;
+    private OrientationData currentOrientationData;
     private StepLengthData currentStepLengthData;
     private StepData currentStepData;
 
@@ -39,9 +40,13 @@ public class PathReconstruction implements
     @Override
     public void onStep(StepData pStepData) {
         currentStepData = pStepData;
-        Vector2D directionVector = new Vector2D(Math.sin(currentDirectionData.walkingDirectionAngle), Math.cos(currentDirectionData.walkingDirectionAngle));
-        Vector2D stepVector = directionVector.scalarMultiply(currentStepLengthData.stepLength);
-        Vector2D nextPosition = pathData.positions.getLast().add(stepVector);
+        //Vector2D stepVector = pStepData.horizontalDirectionNormalized_ph.scalarMultiply(currentStepLengthData.stepLength);
+        Vector3D stepDirectionNormalized_world = currentOrientationData.transformToWorld(pStepData.horizontalDirectionNormalized_ph);
+        Vector2D stepVector_world = new Vector2D(
+                stepDirectionNormalized_world.getX(),
+                stepDirectionNormalized_world.getY()
+        ).scalarMultiply(1.0);
+        Vector2D nextPosition = pathData.positions.get(pathData.positions.size()-1).add(stepVector_world);
         pathData.positions.add(nextPosition);
         pathChangedListener.onPathChanged(pathData);
     }
@@ -52,9 +57,10 @@ public class PathReconstruction implements
     }
 
     @Override
-    public void onDirectionChanged(DirectionData pDirectionData) {
-        currentDirectionData = pDirectionData;
-        pathData.angle = currentDirectionData.pointingDirectionAngle;
+    public void onOrientationChanged(OrientationData pOrientationData) {
+        currentOrientationData = pOrientationData;
+        Vector2D phoneOrientationProjectedOnGroundNormalized_w = currentOrientationData.getPhoneOrientationProjectedOnGroundNormalizedInWorldCoord();
+        pathData.angle = Math.signum(phoneOrientationProjectedOnGroundNormalized_w.getY())*Math.acos(phoneOrientationProjectedOnGroundNormalized_w.getX());
         pathChangedListener.onPathChanged(pathData);
     }
 }

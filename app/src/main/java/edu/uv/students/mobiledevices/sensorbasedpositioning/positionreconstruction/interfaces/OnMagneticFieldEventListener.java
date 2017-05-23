@@ -1,9 +1,11 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces;
 
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent;
+
 /**
  * Created by Fabi on 02.05.2017.
  */
 
 public interface OnMagneticFieldEventListener {
-    void onMagneticFieldEvent(float pX, float pY, float pZ, long pTimeStamp_ns, int pAccuracy);
+    void onMagneticFieldEvent(SensorEvent pSensorEvent);
 }

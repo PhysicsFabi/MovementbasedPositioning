@@ -1,9 +1,11 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces;
 
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent;
+
 /**
  * Created by Fabi on 02.05.2017.
  */
 
 public interface OnAccelerometerEventListener {
-    void onAccelerometerEvent(float pX, float pY, float pZ, long pTimeStamp_ns, int pAccuracy);
+    void onAccelerometerEvent(SensorEvent pSensorEvent);
 }

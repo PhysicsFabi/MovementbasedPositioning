@@ -1,93 +1,51 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.visualization;
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import android.support.v4.content.FileProvider;
 
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
 import processing.core.*;
+import processing.data.*;
+import processing.event.*;
+import processing.opengl.*;
 
-import java.io.File;
 import java.util.*;
+import java.util.HashSet;
 
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.PrintWriter;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.IOException;
 
-public class ProcessingVisualization extends PApplet implements OnPathChangedListener {
+public class ProcessingVisualization extends PApplet {
 
-    private FiniteStateMachine sm;
-    private State initialState;
 
-    private static final float minShownMeters = 10;
-    private LinkedList<Vector2D> path;
+
+    FiniteStateMachine sm;
+    VisualizationState visualizationState;
+    AndroidProcessingInterface androidInterface;
+
+    public final float MIN_SHOWN_METERS_ZOOM_IN=5.f;
+    public final float MIN_SHOW_METERS_ZOOM_INITIAL=10.f;
+    public final float MIN_SHOWN_METERS_ZOOM_OUT=30.f;
+
+    private List<PVector> path;
     private float direction;
 
-
-    private OnResetListener onResetListener;
-    private Context context;
-    private static final String SCREEN_SHOT_FILE_NAME = "dead_reckoning.jpg";
-
-    public void setOnResetListener(OnResetListener onResetListener) {
-        this.onResetListener = onResetListener;
+    public void setAndroidInterface(AndroidProcessingInterface pAndroidInterface) {
+        androidInterface=pAndroidInterface;
+        androidInterface.setProcessingVisualization(this);
     }
 
-    public void setContext(Context context) {
-        this.context = context;
+    public void onPathChanged() {
+        if(androidInterface==null)
+            return;
+        path=androidInterface.getPath();
+        direction=androidInterface.getDirection();
     }
 
-    @Override
-    public void onPathChanged(PathData pPathData) {
-        path = pPathData.positions;
-        direction = (float)pPathData.angle;
-
-    }
-
-    private class InitialState extends State {
-
-        private Hud hud;
-        private BackgroundGrid backgroundGrid;
-        private Figurine figurine;
-
-        public InitialState() {
-            super("INITAL_STATE");
-            backgroundGrid = new BackgroundGrid(width,height);
-            hud = new Hud(width,height);
-            figurine = new Figurine();
-        }
-
-        public void draw() {
-            background(0xff1da1f2);
-            backgroundGrid.draw();
-            pushMatrix();
-            translate(width/2, height/2);
-            int x0=0,y0=0;
-            strokeWeight(0.008f*width);
-            stroke(0xff000000);
-            if(path!=null) {
-                for (Vector2D position : path) {
-                    int x1 = metersToPixels((float) position.getX());
-                    int y1 = metersToPixels((float) position.getY());
-                    line(x0, y0, x1, y1);
-                    x0 = x1;
-                    y0 = y1;
-                }
-
-                pushMatrix();
-                translate(x0, y0);
-                pushMatrix();
-                rotate(direction);
-                figurine.draw();
-                popMatrix();
-                popMatrix();
-
-                popMatrix();
-            }
-            hud.draw();
-            super.draw();
-        }
+    public void onLowSensorAccuracy() {
+        visualizationState.onLowSensorAccuracy();
     }
 
     public void settings() {
@@ -95,67 +53,53 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
     }
 
     public void setup() {
-        initMetersToPixelsConversion();
         reset();
+        sm=new FiniteStateMachine();
+        sm.addState(new DescriptionState());
+        visualizationState = new VisualizationState();
+        sm.addState(visualizationState);
     }
+
 
     public void draw() {
         sm.draw();
     }
 
-    private void reset() {
-        sm=new FiniteStateMachine();
-        sm.addState(new InitialState());
-        path = new LinkedList<>();
-        path.add(new Vector2D(0,0));
-        direction = 0.0f;
+    public void reset() {
+        if(visualizationState!=null)
+            visualizationState.reset();
     }
+    public interface AndroidProcessingInterface {
 
-    private void saveScreenshot() {
-        PImage screenshotP = get(0,0,width,height);
-        String filePathAndName = context.getFilesDir().toString() + File.separator + SCREEN_SHOT_FILE_NAME;
-        File file = new File(filePathAndName);
-        screenshotP.save(file.toString());
-        if(file.exists()) {
-            Intent intentShareFile = new Intent(Intent.ACTION_SEND);
-            Uri uri = FileProvider.getUriForFile(context, "edu.uv.students.mobiledevices.sensorbasedpositioning.provider", file);
-            intentShareFile.setType("image/*");
-            intentShareFile.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intentShareFile.putExtra(Intent.EXTRA_STREAM, uri);
-            intentShareFile.putExtra(Intent.EXTRA_SUBJECT, "Sharing File...");
-            intentShareFile.putExtra(Intent.EXTRA_TEXT, "Sharing File...");
-            context.startActivity(Intent.createChooser(intentShareFile, "Share File"));
-        }
+        public void onReset();
+        public void startDeadReckoning();
+        public void saveScreenshot(PImage pScreenshot);
+        public List<PVector> getPath();
+        public void setProcessingVisualization(ProcessingVisualization pProcessingVisualization);
+        public float getDirection();
     }
-    private class BackgroundGrid implements Drawable {
+    class BackgroundGrid implements Drawable {
         final int w;
         final int h;
-        final float w_m;
-        final float h_m;
-        final int n_m_w;
-        final int n_m_h;
-        final int blockW;
-        final int offsetX;
-        final int offsetY;
+        int n_w;
+        int n_h;
+        int blockW;
+        int offsetX_p;
+        int offsetY_p;
+        int offsetX_origin_p;
+        int offsetY_origin_p;
 
         BackgroundGrid(int pW, int pH) {
             w=pW;
             h=pH;
-            w_m=pixelsToMeters(pW);
-            h_m=pixelsToMeters(pH);
-            n_m_w=ceil(w_m);
-            n_m_h=ceil(h_m);
-            blockW=metersToPixels(1);
-            offsetX = metersToPixels((w_m-n_m_w)/2.0f);
-            offsetY = metersToPixels((h_m-n_m_h)/2.0f);
         }
 
         public void draw() {
             strokeWeight(0);
             pushMatrix();
-            translate(offsetX, offsetY);
-            for (int i = 0; i <= n_m_w; i ++) {
-                for (int j = 0; j <= n_m_h; j ++) {
+            translate(offsetX_p, offsetY_p);
+            for (int i = 0; i <= n_w; i ++) {
+                for (int j = 0; j <= n_h; j ++) {
                     if ((i + j + 1) % 2 == 0) {
                         fill(255, 255, 255); // white
                     } else {
@@ -167,15 +111,78 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             fill(0xff000000);
             textSize(0.5f*blockW);
             textAlign(CENTER, CENTER);
-            text("1m",blockW,(n_m_h-2)*blockW,blockW,blockW);
+            text("1m",2*blockW,(n_h-2)*blockW,blockW,blockW);
             popMatrix();
         }
+
+        public void calculateParameters() {
+            blockW=metersToPixels(1);
+            n_w=ceil((float)w/(float)blockW)+1;
+            n_h=ceil((float)h/(float)blockW)+1;
+            int zeroGridPointX_p=ceil(n_w/2.0f)*blockW;
+            int zeroGridPointY_p=ceil(n_h/2.0f)*blockW;
+            offsetX_p = floor(w/2.0f-zeroGridPointX_p);
+            offsetY_p = floor(h/2.0f-zeroGridPointY_p);
+            offsetX_origin_p = offsetX_p+zeroGridPointX_p;
+            offsetY_origin_p = offsetY_p+zeroGridPointY_p;
+        }
     }
-    private class Figurine implements Drawable {
+    class DescriptionState extends State {
+
+        TransitRectButton startButton;
+        int buttonH;
+        int buttonW;
+        int buttonPadding;
+
+        PFont headingFont;
+        int headingTextSize;
+        int headingW;
+        int headingH;
+        int headingPaddingTop;
+        int headingPaddingLeft;
+        String headingText = "Dead-Reckoning";
+
+
+        public DescriptionState() {
+            super("DESCRIPTION_STATE");
+            buttonW=floor(0.95f*width);
+            buttonH=floor(0.07f*height);
+            buttonPadding=floor(0.5f*(width-buttonW));
+
+            headingW=floor(0.9f*width);
+            headingH=floor(0.2f*height);
+            headingPaddingTop=floor(0.1f*height);
+            headingPaddingLeft=floor((width-headingW)/2.0f);
+            headingTextSize = findFontSizeToFitBox(headingW,headingH, headingText);
+            headingFont = createDefaultFont(headingTextSize);
+
+            startButton = new TransitRectButton(
+                    "VISUALIZATION_STATE",
+                    this,
+                    new FadingTransitAnimation(),
+                    new TextRectButtonRenderer("Start",buttonW,buttonH),
+                    buttonPadding,height-buttonPadding-buttonH,buttonW,buttonH);
+            drawables.add(startButton);
+        }
+
+        public void draw() {
+            super.draw();
+            pushStyle();
+            fill(0xff000000);
+            textSize(headingTextSize);
+            textFont(headingFont);
+            textAlign(CENTER,CENTER);
+            text(headingText,headingPaddingLeft,headingPaddingTop,headingW,headingH);
+            popStyle();
+
+
+        }
+    }
+    class Figurine implements Drawable {
         PImage userImg;
 
         Figurine() {
-            userImg = resize(loadImage("user.png"), metersToPixels(0.5f), 0);
+            userImg = resize(loadImage("user.png"), floor(0.06f*width), 0);
         }
 
         public void draw() {
@@ -184,9 +191,10 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             imageMode(CORNER);
         }
     }
-    private class State implements Drawable {
+    class State implements Drawable {
         final String ID;
         protected ArrayList<Drawable> drawables;
+        private FiniteStateMachine stateMachine;
 
         State(String pId) {
             ID=pId;
@@ -210,9 +218,17 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
 
         public void OnAppear() {}
 
+        public void setStateMachine(FiniteStateMachine pStateMachine) {
+            stateMachine=pStateMachine;
+        }
+
+        public FiniteStateMachine getStateMachine() {
+            return stateMachine;
+        }
+
     }
 
-    private class StateWithBGImage extends State {
+    class StateWithBGImage extends State {
         PImage bgImage;
 
         StateWithBGImage(String pId,String pFileName) {
@@ -234,12 +250,12 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    private interface TransitAnimation {
-        boolean drawAnimatedTransit(State fromState, State toState);
-        void reset();
+    interface TransitAnimation {
+        public boolean drawAnimatedTransit(State fromState, State toState);
+        public void reset();
     }
 
-    private class FadingTransitAnimation implements TransitAnimation {
+    class FadingTransitAnimation implements TransitAnimation {
         int durationMilliSec;
         int fadingColor;
 
@@ -296,7 +312,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    private class FiniteStateMachine implements Drawable {
+    class FiniteStateMachine implements Drawable {
         HashMap<String,State> states;
         State currentState;
         State nextState;
@@ -313,6 +329,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             if(currentState==null)
                 currentState=pState;
             states.put(pState.ID, pState);
+            pState.setStateMachine(this);
         }
 
         public State getState(String pStateId) {
@@ -363,34 +380,34 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    private class TransitRectButton extends RectButton implements OnRectButtonEventListener {
+    class TransitRectButton extends RectButton implements OnRectButtonEventListener {
         String transitToStateId;
-        FiniteStateMachine finiteStateMachine;
+        State transitFromState;
         TransitAnimation transitAnimation;
 
         TransitRectButton(
                 String pTransitToStateId,
-                FiniteStateMachine pFiniteStateMachine,
+                State pTransitFromState,
                 TransitAnimation pTransitAnimation,
                 RectButtonRenderer pRectButtonRenderer,
                 float pX,float pY,float pWidth,float pHeight) {
             super(pX,pY,pWidth,pHeight,null,pRectButtonRenderer);
             transitToStateId=pTransitToStateId;
-            finiteStateMachine=pFiniteStateMachine;
+            transitFromState=pTransitFromState;
             transitAnimation=pTransitAnimation;
             eventListener=this;
         }
 
         TransitRectButton(
                 String pTransitToStateId,
-                FiniteStateMachine pFiniteStateMachine,
+                State pTransitFromState,
                 RectButtonRenderer pRectButtonRenderer,
                 float pX,float pY,float pWidth,float pHeight) {
-            this(pTransitToStateId,pFiniteStateMachine,null,pRectButtonRenderer,pX,pY,pWidth,pHeight);
+            this(pTransitToStateId,pTransitFromState,null,pRectButtonRenderer,pX,pY,pWidth,pHeight);
         }
 
         public void onMouseClicked(RectButton pButton) {
-            finiteStateMachine.transit(transitToStateId,transitAnimation);
+            transitFromState.getStateMachine().transit(transitToStateId,transitAnimation);
         }
 
         public void onMouseOver(RectButton pButton){}
@@ -398,7 +415,11 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         public void onMousePressed(RectButton pButton){}
         public void onMouseReleased(RectButton pButton){}
     }
-    private class Hud implements Drawable {
+    interface OnZoomChangedListener {
+        public void onZoomChanged(float minShownZoom);
+    }
+
+    class Hud implements Drawable, OnPercentageSelectorChangedListener {
 
         int w;
         int h;
@@ -413,10 +434,19 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         int buttonW;
         int buttonPadding;
 
-        public Hud(int pW, int pH) {
+        PercentageSelector zoomSelector;
+        int zoomSelectorW;
+        int zoomSelectorH;
+        int zoomSelectorPadding;
+        float initalPercentage;
+
+        private OnZoomChangedListener onZoomChangedListener;
+
+        public Hud(int pW, int pH, OnZoomChangedListener pOnZoomChangedListener) {
             w=pW;
             h=pH;
-            compassRoseW = floor(0.18f*w);
+            onZoomChangedListener=pOnZoomChangedListener;
+            compassRoseW = floor(0.1f*w);
             compassRosePadding = floor(0.01f*w);
             compassRoseImg = resize(loadImage("compass_rose.png"), compassRoseW, 0);
 
@@ -424,7 +454,12 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             buttonW=3*buttonH;
             buttonPadding=floor(0.05f*buttonW);
             saveButton = new RectButton("Save", w-2*buttonW-2*buttonPadding, h-buttonPadding-buttonH, buttonW, buttonH, new OnRectButtonEventListener(){
-                public void onMouseClicked(RectButton pButton){ saveScreenshot(); }
+                public void onMouseClicked(RectButton pButton){
+                    if(androidInterface!=null) {
+                        PImage screenshot = get(0,0,width,height);
+                        androidInterface.saveScreenshot(screenshot);
+                    }
+                }
                 public void onMouseOver(RectButton pButton){}
                 public void onMouseOut(RectButton pButton){}
                 public void onMousePressed(RectButton pButton){}
@@ -432,9 +467,9 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             });
             resetButton = new RectButton("Reset", w-buttonW-buttonPadding, h-buttonPadding-buttonH, buttonW, buttonH, new OnRectButtonEventListener(){
                 public void onMouseClicked(RectButton pButton){
+                    if(androidInterface!=null)
+                        androidInterface.onReset();
                     reset();
-                    if(onResetListener!=null)
-                        onResetListener.onReset();
                 }
                 public void onMouseOver(RectButton pButton){}
                 public void onMouseOut(RectButton pButton){}
@@ -442,47 +477,179 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
                 public void onMouseReleased(RectButton pButton){}
             });
 
+            zoomSelectorW=floor(0.7f*width);
+            zoomSelectorH=buttonH;
+            zoomSelectorPadding=buttonPadding;
+            initalPercentage = 1.f-(MIN_SHOW_METERS_ZOOM_INITIAL-MIN_SHOWN_METERS_ZOOM_IN)/(MIN_SHOWN_METERS_ZOOM_OUT-MIN_SHOWN_METERS_ZOOM_IN);
+            zoomSelector = new PercentageSelector(width-zoomSelectorPadding-zoomSelectorW,buttonPadding,zoomSelectorW,zoomSelectorH,initalPercentage,8,this);
+
+        }
+
+        public void resetToInitialZoom() {
+            zoomSelector.setPercentage(initalPercentage);
         }
 
         public void draw() {
             image(compassRoseImg, compassRosePadding, compassRosePadding);
             saveButton.draw();
             resetButton.draw();
+            zoomSelector.draw();
+        }
+
+        public void onPercentageChanged(float pPercentage, PercentageSelector pSelector) {
+            float minShownMeters = (1.f-pPercentage)*(MIN_SHOWN_METERS_ZOOM_OUT-MIN_SHOWN_METERS_ZOOM_IN)+MIN_SHOWN_METERS_ZOOM_IN;
+            if(onZoomChangedListener!=null)
+                onZoomChangedListener.onZoomChanged(minShownMeters);
+        }
+    }
+    interface OnPercentageSelectorChangedListener {
+        public void onPercentageChanged(float pPercentage, PercentageSelector pSelector);
+    }
+
+
+    interface PercentageSelectorRenderer {
+        public void render(int pX,int pY,int pWidth,int pHeight,float percentage);
+    }
+
+    class DefaultPercentageSelectorRenderer implements PercentageSelectorRenderer {
+        float buttonPaddingRel=0.03f;
+
+        public void render(int pX,int pY,int pWidth,int pHeight,float percentage) {
+            strokeWeight(0);
+            stroke(0x00FFFFFF);
+            fill(0xffFFFFFF);
+            rect(pX+buttonPaddingRel*pWidth,pY,(1.0f-2.0f*buttonPaddingRel)*pWidth,pHeight);
+
+            strokeWeight(0.05f*pHeight);
+            stroke(0xff000000);
+            fill(0x00FFFFFF);
+            rect(pX+buttonPaddingRel*pWidth,pY,(1.0f-2.0f*buttonPaddingRel)*pWidth,pHeight);
+
+            strokeWeight(0);
+            stroke(0x00FFFFFF);
+            fill(0xff000000);
+            rect(pX+buttonPaddingRel*pWidth,pY,(1.0f-2.0f*buttonPaddingRel)*pWidth*percentage,pHeight);
         }
     }
 
 
-    private interface MouseProspect {
-        boolean isInside(float pX, float pY);
-        // methods are called every frame
-        void notifyHovered();
-        void notifyNotHovered();
-        void notifyPressed();
-        void notifyReleased();
+    class PercentageSelector implements Drawable {
+        int x;
+        int y;
+        int w;
+        int h;
+        private RectButton minusButton;
+        private RectButton plusButton;
+        private PercentageSelectorRenderer renderer;
+        private OnPercentageSelectorChangedListener listener;
+        private float percentage;
+
+        private int steps;
+        private int selectionAreaX;
+        private int selectionAreaY;
+        private int selectionAreaWidth;
+        private int selectionAreaHeight;
+        private float percentageStep;
+
+        PercentageSelector(int pX,int pY,int pWidth,int pHeight,float pInitalPercentage,int pSteps,PercentageSelectorRenderer pRenderer, OnPercentageSelectorChangedListener pListener) {
+            x=pX;
+            y=pY;
+            w=pWidth;
+            h=pHeight;
+            percentage=pInitalPercentage;
+            steps=pSteps;
+            percentageStep=1.0f/steps;
+            renderer=pRenderer;
+            listener=pListener;
+            measurements();
+            setupButtons();
+            notifiyListener();
+        }
+
+        PercentageSelector(int pX,int pY,int pWidth,int pHeight,float pInitalPercentage,int pSteps, OnPercentageSelectorChangedListener pListener) {
+            this(pX,pY,pWidth,pHeight,pInitalPercentage,pSteps,new DefaultPercentageSelectorRenderer(), pListener);
+        }
+
+        public void setupButtons() {
+            minusButton=new RectButton("-",x,y,h,h,new OnRectButtonEventListener() {
+                public void onMouseClicked(RectButton pButton) {
+                    percentage=max(0.0f,percentage-percentageStep);
+                    notifiyListener();
+                }
+                public void onMouseOver(RectButton pButton){}
+                public void onMouseOut(RectButton pButton){}
+                public void onMousePressed(RectButton pButton){}
+                public void onMouseReleased(RectButton pButton){}
+            });
+            plusButton=new RectButton("+",x+w-h,y,h,h,new OnRectButtonEventListener() {
+                public void onMouseClicked(RectButton pButton) {
+                    percentage=min(1.0f,percentage+percentageStep);
+                    notifiyListener();
+                }
+                public void onMouseOver(RectButton pButton){}
+                public void onMouseOut(RectButton pButton){}
+                public void onMousePressed(RectButton pButton){}
+                public void onMouseReleased(RectButton pButton){}
+            });
+        }
+
+
+        private void measurements() {
+            selectionAreaX=x+h;
+            selectionAreaY=y;
+            selectionAreaWidth=w-2*h;
+            selectionAreaHeight=h;
+        }
+
+        public void setPercentage(float pPercentage) {
+            percentage=pPercentage;
+            notifiyListener();
+        }
+
+        public void draw() {
+            minusButton.draw();
+            plusButton.draw();
+            renderer.render(selectionAreaX,selectionAreaY,selectionAreaWidth,selectionAreaHeight,percentage);
+        }
+
+        public void notifiyListener() {
+            if(listener!=null)
+                listener.onPercentageChanged(percentage, this);
+        }
     }
 
-    private interface OnRectButtonEventListener {
+
+    static interface MouseProspect {
+        public boolean isInside(float pX,float pY);
+        // methods are called every frame
+        public void notifyHovered();
+        public void notifyNotHovered();
+        public void notifyPressed();
+        public void notifyReleased();
+    }
+
+    static interface OnRectButtonEventListener {
         // methods are called once (and not every frame)
         // onMouseClick is not fired for disabled buttons
-        void onMouseClicked(RectButton pButton);
-        void onMouseOver(RectButton pButton);
-        void onMouseOut(RectButton pButton);
-        void onMousePressed(RectButton pButton);
-        void onMouseReleased(RectButton pButton);
+        public void onMouseClicked(RectButton pButton);
+        public void onMouseOver(RectButton pButton);
+        public void onMouseOut(RectButton pButton);
+        public void onMousePressed(RectButton pButton);
+        public void onMouseReleased(RectButton pButton);
     }
 
-    private static class ButtonRenderState {
+    static class ButtonRenderState {
         static final int BT_NORMAL=0;
         static final int BT_HOVERED=1;
         static final int BT_PRESSED=2;
         static final int BT_DISABLED=3;
     }
 
-    private interface RectButtonRenderer {
-        void render(float pButtonX, float pButtonY, float pButtonWidth, float pButtonHeight, int pButtonState);
+    static interface RectButtonRenderer {
+        public void render(float pButtonX,float pButtonY,float pButtonWidth,float pButtonHeight,int pButtonState);
     }
 
-    private void handleMouseProspect(MouseProspect pMouseProspects) {
+    public void handleMouseProspect(MouseProspect pMouseProspects) {
         if(pMouseProspects.isInside(mouseX,mouseY)) {
             pMouseProspects.notifyHovered();
             if(mousePressed)
@@ -494,7 +661,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    private class RectButtonRendererBase implements RectButtonRenderer {
+    class RectButtonRendererBase implements RectButtonRenderer {
         int[] bgColors;
         float[] strokeWeightsRelativeToW;
         int[] strokeColors;
@@ -508,7 +675,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         RectButtonRendererBase() {
             bgColors=new int[]{0xffFFFFFF,0xffFFFFFF,0xff0A81FC,0xffA5A5A5};
             strokeWeightsRelativeToW=new float[]{.002f,0.002f,.004f,.002f};
-            strokeColors=new int[]{0xff000000,0xff000000,0xff000000,0xff959595};
+            strokeColors=new int[]{0xff000000,0xff000000,0xff000000,0xff959595};;
         }
 
         public void render(float pButtonX,float pButtonY,float pButtonWidth,float pButtonHeight,int pButtonRenderState) {
@@ -521,7 +688,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    private class TextRectButtonRenderer extends RectButtonRendererBase {
+    class TextRectButtonRenderer extends RectButtonRendererBase {
         String[] texts;
         int[] textColors;
         PFont[] fonts;
@@ -693,7 +860,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    private class ImageRectButtonRenderer implements RectButtonRenderer {
+    class ImageRectButtonRenderer implements RectButtonRenderer {
         PImage[] images;
         float[] imagePaddingsLeftRelativeToW;
         float[] imagePaddingsTopRelativeToH;
@@ -769,7 +936,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         }
     }
 
-    private class RectButton implements MouseProspect, Drawable {
+    class RectButton implements MouseProspect, Drawable {
         float x;
         float y;
         float w;
@@ -902,24 +1069,24 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
     float metersToPixelsScaleFactor;
     float pixelsToMetersScaleFactor;
 
-    private void initMetersToPixelsConversion() {
-        metersToPixelsScaleFactor = min(width,height)/minShownMeters;
+    public void initMetersToPixelsConversion(final float pMinShownMeters) {
+        metersToPixelsScaleFactor = min(width,height)/pMinShownMeters;
         pixelsToMetersScaleFactor = 1/metersToPixelsScaleFactor;
         width_meter = pixelsToMeters(width);
         height_meter = pixelsToMeters(height);
     }
 
-    private float pixelsToMeters(int pixels) {
+    public float pixelsToMeters(int pixels) {
         return pixels*pixelsToMetersScaleFactor;
     }
 
-    private int metersToPixels(float meters) {
+    public int metersToPixels(float meters) {
         return floor(meters*metersToPixelsScaleFactor);
     }
     /** Provides a method that should be called every frame
      */
-    private interface Drawable {
-        void draw();
+    static interface Drawable {
+        public void draw();
     }
 
 
@@ -927,7 +1094,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
      *  for all Images that where not created by loadImage(),
      *  but by calls to get(), copy(), etc. This is a workaround.
      */
-    private PImage resize(PImage pImage,int pWidth,int pHeight) {
+    public PImage resize(PImage pImage,int pWidth,int pHeight) {
         if(pHeight==0) {
             pHeight=pImage.height*pWidth/pImage.width;
         } else if(pWidth==0) {
@@ -940,7 +1107,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
         return img;
     }
 
-    private PImage resizeToFitBox(PImage pImage,int pWidth,int pHeight) {
+    public PImage resizeToFitBox(PImage pImage,int pWidth,int pHeight) {
         float scaleFactorW=(float)pWidth/pImage.width;
         float scaleFactorH=(float)pHeight/pImage.height;
         if(scaleFactorW>scaleFactorH)
@@ -949,7 +1116,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             return resize(pImage,floor(pWidth),0);
     }
 
-    private PImage resizeToCoverBox(PImage pImage,int pWidth,int pHeight) {
+    public PImage resizeToCoverBox(PImage pImage,int pWidth,int pHeight) {
         boolean isWidthFitted=((float)pWidth/pImage.width)*pImage.height>=pHeight;
         if(isWidthFitted)
             return resize(pImage,pWidth,0);
@@ -957,7 +1124,7 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
             return resize(pImage,0,pHeight);
     }
 
-    private void drawImageInBox(
+    public void drawImageInBox(
             PImage pImage,
             float pX,
             float pY,
@@ -994,6 +1161,145 @@ public class ProcessingVisualization extends PApplet implements OnPathChangedLis
                 break;
         }
         image(pImage,imageX,imageY);
+    }
+
+    public float getTextWidthOrHeight(PFont pFont,int fontSize,String pText,boolean pWidth) {
+        textFont(pFont,fontSize);
+        textSize(fontSize);
+        if(pWidth)
+            return textWidth(pText);
+        else {
+            int lines=pText.split("\r\n|\r|\n").length;
+            // g is current style and only possibility to get hold of textLeading
+            return lines*(textDescent() + textAscent())+(lines-1)*g.textLeading;
+        }
+    }
+
+    public int findFontSizeToFitWidthOrHeight(PFont pFont,int startFontSize,float pWidthOrHeight,String pText,float relativeErrorThreshold,boolean pFitWidth) {
+        final int maxIterations=4;
+        final int pixelPaddingToFineAdjustCalculationErrors=5; // should be approx. 0
+        int fontSize=startFontSize;
+        float relativeError=1.0f;
+        float textSize=getTextWidthOrHeight(pFont,startFontSize,pText,pFitWidth);
+        int iter=0;
+
+        do {
+            fontSize=floor(fontSize/textSize*pWidthOrHeight);
+            textSize=getTextWidthOrHeight(pFont,fontSize,pText,pFitWidth);
+            relativeError=abs(1.0f-textSize/(pWidthOrHeight-pixelPaddingToFineAdjustCalculationErrors));
+            ++iter;
+        } while(relativeError>relativeErrorThreshold && iter<maxIterations);
+        if(textSize>pWidthOrHeight)
+            --fontSize;
+        return fontSize;
+    }
+
+    public int findFontSizeToFitBox(PFont pFont,int startFontSize,float pWidth, float pHeight, String pText,float relativeErrorThreshold) {
+        return min(
+                findFontSizeToFitWidthOrHeight(pFont, startFontSize, pWidth, pText, relativeErrorThreshold, true),
+                findFontSizeToFitWidthOrHeight(pFont, startFontSize, pHeight, pText, relativeErrorThreshold, false)
+        );
+    }
+
+    public int findFontSizeToFitBox(float pWidth, float pHeight, String pText) {
+        int startFontSize=12;
+        float relativeErrorThreshold = 0.01f;
+        PFont font = createDefaultFont(startFontSize);
+        return min(
+                findFontSizeToFitWidthOrHeight(font, startFontSize, pWidth, pText, relativeErrorThreshold, true),
+                findFontSizeToFitWidthOrHeight(font, startFontSize, pHeight, pText, relativeErrorThreshold, false)
+        );
+    }
+    class VisualizationState extends State implements OnZoomChangedListener {
+
+        private Hud hud;
+        private BackgroundGrid backgroundGrid;
+        private Figurine figurine;
+        private boolean isSensorAccuracyLow;
+        private int lowSensorAccuracyBoxH;
+        private PFont font;
+        private int textS;
+        private String lowSensorAccuracyText;
+
+        public void setIsSensorAccuracyLow(boolean pIsSensorAccuracyLow) {
+            isSensorAccuracyLow=pIsSensorAccuracyLow;
+        }
+
+        public VisualizationState() {
+            super("VISUALIZATION_STATE");
+            backgroundGrid = new BackgroundGrid(width,height);
+            hud = new Hud(width,height,this);
+            figurine = new Figurine();
+            isSensorAccuracyLow=false;
+            lowSensorAccuracyText = "Sensor Precision changed to low!";
+            lowSensorAccuracyBoxH=floor(0.2f*height);
+            textS = findFontSizeToFitBox((float)width, (float)lowSensorAccuracyBoxH, lowSensorAccuracyText);
+            font = createDefaultFont(textS);
+        }
+
+        public void draw() {
+            background(0xff1da1f2);
+            backgroundGrid.draw();
+            pushMatrix();
+            translate(backgroundGrid.offsetX_origin_p, backgroundGrid.offsetY_origin_p);
+            int x0=0,y0=0;
+            strokeWeight(0.01f*width);
+            stroke(0xff000000);
+            if(path!=null) {
+                for(PVector position : path) {
+                    int x1=metersToPixels(position.x);
+                    int y1=metersToPixels(position.y);
+                    line(x0,y0,x1,y1);
+                    x0=x1;
+                    y0=y1;
+                }
+            }
+
+            pushMatrix();
+            translate(x0,y0);
+            pushMatrix();
+            rotate(direction);
+            figurine.draw();
+            popMatrix();
+            popMatrix();
+
+            popMatrix();
+            hud.draw();
+            super.draw();
+
+
+            if(isSensorAccuracyLow) {
+                pushStyle();
+                rectMode(CENTER);
+                fill(0x99000000);
+                rect(width/2, height/2, width, lowSensorAccuracyBoxH);
+                fill(0xffFF0000);
+                textFont(font, textS);
+                textSize(textS);
+                textAlign(CENTER, CENTER);
+                text(lowSensorAccuracyText, width/2, height/2, width, lowSensorAccuracyBoxH);
+                popStyle();
+            }
+        }
+
+        public void onZoomChanged(float pMinShownMeters) {
+            initMetersToPixelsConversion(pMinShownMeters);
+            backgroundGrid.calculateParameters();
+        }
+
+        public void OnAppear() {
+            if(androidInterface!=null)
+                androidInterface.onReset();
+        }
+
+        public void onLowSensorAccuracy() {
+            isSensorAccuracyLow=true;
+        }
+
+        public void reset() {
+            setIsSensorAccuracyLow(false);
+            hud.resetToInitialZoom();
+        }
     }
     static public void main(String[] passedArgs) {
         String[] appletArgs = new String[] { "ProcessingVisualization" };

@@ -5,4 +5,5 @@ package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruct
  */
 
 public interface OnSensorAccuracyLowListener {
+    void onSensorAccuracyLow();
 }

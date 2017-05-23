@@ -2,7 +2,9 @@ package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruct
 
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by Fabi on 02.05.2017.
@@ -24,12 +26,13 @@ public class PathData {
      * x is East direction
      * y is South direction
      * Units are meters
+     * This list is synchronized
      */
-    public LinkedList<Vector2D> positions;
+    public final List<Vector2D> positions;
 
     public PathData() {
         angle = 0.0;
-        positions = new LinkedList<>();
+        positions = Collections.synchronizedList(new LinkedList<Vector2D>());
         positions.add(new Vector2D(0,0));
     }
 }

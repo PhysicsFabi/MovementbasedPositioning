@@ -1,7 +1,6 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.utils;
 
 import android.content.res.AssetManager;
-import android.hardware.Sensor;
 import android.util.Log;
 
 import java.io.File;

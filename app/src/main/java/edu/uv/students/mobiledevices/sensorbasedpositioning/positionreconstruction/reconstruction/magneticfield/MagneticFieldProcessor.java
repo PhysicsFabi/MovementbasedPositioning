@@ -1,11 +1,9 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.sensoreventcollection;
-
-import android.util.Log;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.magneticfield;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.PositionReconstruction;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnMagneticFieldEventListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnMagneticFieldVectorChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent;
 
 /**
@@ -14,11 +12,11 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
 
 public class MagneticFieldProcessor implements OnMagneticFieldEventListener {
 
-    PositionReconstruction positionReconstruction;
+    final OnMagneticFieldVectorChangedListener listener;
     Vector3D magneticFieldLowPassFiltered;
 
-    public MagneticFieldProcessor(PositionReconstruction pPositionReconstruction) {
-        positionReconstruction = pPositionReconstruction;
+    public MagneticFieldProcessor(OnMagneticFieldVectorChangedListener pListener) {
+        listener = pListener;
     }
 
     @Override
@@ -33,9 +31,9 @@ public class MagneticFieldProcessor implements OnMagneticFieldEventListener {
                     alpha * magneticFieldLowPassFiltered.getZ() + (1 - alpha) * pSensorEvent.values[2]
             );
         }
-        positionReconstruction.onMagneticFieldChanged(magneticFieldLowPassFiltered);
-        //Log.i("MAGNETIC EVALUATION","\t"+pSensorEvent.timeNs+"\t"+magneticFieldLowPassFiltered.getX()+"\t"+magneticFieldLowPassFiltered.getY()+"\t"+magneticFieldLowPassFiltered.getZ());
-        //Log.i("MAGNETIC EVALUATION","\t"+pSensorEvent.timeNs+"\t"+pSensorEvent.values[0]+"\t"+pSensorEvent.values[1]+"\t"+pSensorEvent.values[2]);
+        listener.onMagneticFieldVectorChanged(magneticFieldLowPassFiltered);
+        //Log.i("MAGNETIC EVALUATION","\t"+pSensorEvent.footDownTimeNs+"\t"+magneticFieldLowPassFiltered.getX()+"\t"+magneticFieldLowPassFiltered.getY()+"\t"+magneticFieldLowPassFiltered.getZ());
+        //Log.i("MAGNETIC EVALUATION","\t"+pSensorEvent.footDownTimeNs+"\t"+pSensorEvent.values[0]+"\t"+pSensorEvent.values[1]+"\t"+pSensorEvent.values[2]);
     }
 
 

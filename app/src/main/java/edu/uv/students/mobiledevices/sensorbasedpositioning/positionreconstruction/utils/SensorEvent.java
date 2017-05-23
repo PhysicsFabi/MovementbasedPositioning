@@ -5,4 +5,13 @@ package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruct
  */
 
 public class SensorEvent {
+    public final long timeNs;
+    public final float[] values;
+    public final int accuracy;
+
+    public SensorEvent(long pTimeNs, float[] pValues, int pAccuracy) {
+        timeNs = pTimeNs;
+        values = pValues;
+        accuracy = pAccuracy;
+    }
 }

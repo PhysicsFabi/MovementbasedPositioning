@@ -1,134 +1,95 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.direction;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.orientation;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
-import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnAccelerometerEventListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnDirectionChangedListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnMagneticFieldEventListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnDownwardsVectorChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnMagneticFieldVectorChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnOrientationChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.LinearAlgebraTools;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEventsProcessingTools;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.collections.SensorEventFixedTimeWindow;
 
 /**
  * Created by Fabi on 02.05.2017.
  */
 
-public class DirectionReconstruction implements OnAccelerometerEventListener, OnMagneticFieldEventListener {
-    private enum STATE {
-        IDLE,
-        MEASURE_REFERENCE,
-        MEASURE
-    }
+public class OrientationReconstruction implements
+        OnMagneticFieldVectorChangedListener,
+        OnDownwardsVectorChangedListener,
+        OrientationData {
 
-    private final OnDirectionChangedListener directionChangedListener;
+    final OnOrientationChangedListener listener;
+    Vector3D downwardsNormalized_ph;
+    Vector3D magneticField_ph;
 
-    private final DirectionData directionData;
+    Vector3D southNormalized_ph;
 
-    private STATE  state;
-    
-    private static final long REF_MEASURE_TIME_NS = (long)(1e9);
-    private Vector3D refMagneticFieldNormalized_ph;
-    private Vector3D refDownwardsNormalized_ph;
-    private Vector3D refNorthNormalized_ph;
-    private SensorEventFixedTimeWindow refEventsMagneticField;
-    private SensorEventFixedTimeWindow refEventsAccelerometer;
+    final Vector3D downwardsNormalized_w = new Vector3D(.0,.0,1.0);
+    final Vector3D southNormalized_w = new Vector3D(.0,1.0,.0);
 
+    final Vector3D phoneOrientationNormalized_ph = new Vector3D(.0,1.0,.0);
 
-    private static final long MEASURE_RESOLUTION_NS = (long)(0.1*1e9);
-    private long lastMeasureNs;
-    private Vector3D magneticFieldNormalized_ph;
-    private Vector3D downwardsNormalized_ph;
-    private Vector3D northNormalized_ph;
-    private Rotation transformationFromRefToCurrent;
+    Vector3D phoneOrientationNormalized_w;
+    Vector2D phoneOrientationProjectedOnGroundNormalized_w;
+
+    Rotation transformationFromPhoneToWorld;
 
 
-    public DirectionReconstruction(OnDirectionChangedListener pListener) {
-        directionChangedListener = pListener;
-        directionData = new DirectionData();
-        state = STATE.IDLE;
-    }
-
-    public void init() {
-        directionData.pointingDirectionAngle = 0.0;
-        directionData.walkingDirectionAngle = 0.0;
-        directionChangedListener.onDirectionChanged(directionData);
-        lastMeasureNs = -MEASURE_RESOLUTION_NS;
-        startRefMeasurement();
-    }
-
-    private void startRefMeasurement() {
-        state = STATE.IDLE;
-        refEventsMagneticField = new SensorEventFixedTimeWindow(REF_MEASURE_TIME_NS, 0);
-        refEventsAccelerometer = new SensorEventFixedTimeWindow(REF_MEASURE_TIME_NS, 0);
-        state = STATE.MEASURE_REFERENCE;
-    }
-
-    private void checkRefMeasurementComplete() {
-        if(refEventsMagneticField.isFull() && refEventsAccelerometer.isFull()) {
-            endRefMeasurement();
-            state = STATE.MEASURE;
-        }
-    }
-
-    private void endRefMeasurement() {
-        state = STATE.IDLE;
-        float[] magneticFieldValues = SensorEventsProcessingTools.getValueMeans(
-                SensorEventsProcessingTools.lowPassFilter(refEventsMagneticField));
-        refMagneticFieldNormalized_ph = new Vector3D(magneticFieldValues[0], magneticFieldValues[1], magneticFieldValues[2]).normalize();
-        float[] accelerometerValues = SensorEventsProcessingTools.getValueMeans(
-                SensorEventsProcessingTools.lowPassFilter(refEventsAccelerometer));
-        refDownwardsNormalized_ph = new Vector3D(accelerometerValues[0], accelerometerValues[1], accelerometerValues[2]).normalize();
-        refNorthNormalized_ph = LinearAlgebraTools.projectOnPane(refDownwardsNormalized_ph, refMagneticFieldNormalized_ph).normalize();
-
-    }
-
-    private void resetTransformationFromRefToCurrent() {
-        Vector3D rotationAxis = magneticFieldNormalized_ph.crossProduct(refMagneticFieldNormalized_ph);
-        double rotation_angle_cos = magneticFieldNormalized_ph.dotProduct(refMagneticFieldNormalized_ph);
-        double rotation_angle = Math.acos(rotation_angle_cos);
-        transformationFromRefToCurrent = new Rotation(rotationAxis, rotation_angle, RotationConvention.VECTOR_OPERATOR);
-    }
-
-    private void setCurrentOrientation() {
-        resetTransformationFromRefToCurrent();
-        downwardsNormalized_ph = transformationFromRefToCurrent.applyTo(refDownwardsNormalized_ph);
-        northNormalized_ph = LinearAlgebraTools.projectOnPane(downwardsNormalized_ph, magneticFieldNormalized_ph).normalize();
+    public OrientationReconstruction(OnOrientationChangedListener pListener) {
+        listener = pListener;
     }
 
     @Override
-    public void onMagneticFieldEvent(SensorEvent pEvent) {
-        switch (state) {
-            case IDLE:
-                return;
-            case MEASURE_REFERENCE:
-                refEventsMagneticField.add(pEvent);
-                checkRefMeasurementComplete();
-                break;
-            case MEASURE:
-                if(pEvent.timeNs-lastMeasureNs< MEASURE_RESOLUTION_NS)
-                    return;
-                lastMeasureNs = pEvent.timeNs;
-                magneticFieldNormalized_ph = new Vector3D(pEvent.values[0], pEvent.values[1], pEvent.values[2]).normalize();
-                setCurrentOrientation();
-                break;
-        }
+    public void onMagneticFieldVectorChanged(Vector3D pMagneticField_ph) {
+        magneticField_ph = pMagneticField_ph;
+        updateOrientation();
     }
 
+    @Override
+    public void onDownwardsVectorChanged(Vector3D pDownwards_ph) {
+        downwardsNormalized_ph = pDownwards_ph;
+        updateOrientation();
+    }
+
+    public void updateOrientation() {
+        if(magneticField_ph == null || downwardsNormalized_ph == null)
+            return;
+        southNormalized_ph = LinearAlgebraTools.projectOnPane(downwardsNormalized_ph, magneticField_ph).scalarMultiply(-1.0).normalize();
+        transformationFromPhoneToWorld = new Rotation(downwardsNormalized_ph, southNormalized_ph, downwardsNormalized_w, southNormalized_w);
+
+        phoneOrientationNormalized_w = transformToWorld(phoneOrientationNormalized_ph);
+        phoneOrientationProjectedOnGroundNormalized_w = new Vector2D(phoneOrientationNormalized_w.getX(), phoneOrientationNormalized_w.getY());
+
+        listener.onOrientationChanged(this);
+    }
 
     @Override
-    public void onAccelerometerEvent(SensorEvent pEvent) {
-        switch (state) {
-            case IDLE:
-                return;
-            case MEASURE_REFERENCE:
-                refEventsAccelerometer.add(pEvent);
-                checkRefMeasurementComplete();
-                break;
-            case MEASURE:
-                break;
-        }
+    public Vector3D transformToPhone(Vector3D pVectorInWorldCoord) {
+        return transformationFromPhoneToWorld.applyInverseTo(pVectorInWorldCoord);
+    }
+
+    @Override
+    public Vector3D transformToWorld(Vector3D pVectorInPhoneCoord) {
+        return transformationFromPhoneToWorld.applyTo(pVectorInPhoneCoord);
+    }
+
+    @Override
+    public Vector3D getDownwardsNormalizedInPhoneCoord() {
+        return downwardsNormalized_ph;
+    }
+
+    @Override
+    public Vector3D getSouthNormalizedInPhoneCoord() {
+        return southNormalized_ph;
+    }
+
+    @Override
+    public Vector3D getPhoneOrientationNormalizedInWorldCoord() {
+        return phoneOrientationNormalized_w;
+    }
+
+    @Override
+    public Vector2D getPhoneOrientationProjectedOnGroundNormalizedInWorldCoord() {
+        return phoneOrientationProjectedOnGroundNormalized_w;
     }
 }

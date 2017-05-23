@@ -2,4 +2,6 @@
     <string name="app_name">Sensorbased Positioning</string>
     <string name="error_missing_sensors">Not all needed sensors are present on this device.</string>
     <string name="positioning_desciption">Works only when the phone is in the position shown on the left.</string>
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
 </resources>

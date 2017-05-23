@@ -1,22 +1,29 @@
 package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction;
 
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
 import java.util.LinkedList;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.direction.DirectionReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.step.StepReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.direction.DirectionData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.step.StepData;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnAccelerometerEventListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnDirectionChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnDownwardsVectorChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnGyroscopeEventListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnMagneticFieldEventListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnMagneticFieldVectorChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnOrientationChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnSensorAccuracyLowListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepLengthChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.accelerometer.AccelerometerProcessor;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.accelerometer.StepData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.magneticfield.MagneticFieldProcessor;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.orientation.OrientationData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.orientation.OrientationReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.steplength.StepLengthReconstruction;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent;
 
 /**
  * Created by Fabi on 02.05.2017.
@@ -27,76 +34,77 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
 public class PositionReconstruction implements
         OnPathChangedListener,
         OnStepListener,
-        OnDirectionChangedListener,
+        OnOrientationChangedListener,
         OnStepLengthChangedListener,
+        OnMagneticFieldVectorChangedListener,
+        OnDownwardsVectorChangedListener,
         OnAccelerometerEventListener,
         OnGyroscopeEventListener,
-        OnMagneticFieldEventListener {
-
-    public static String  LOG_TAG = "Position Reconstruction";
+        OnMagneticFieldEventListener,
+        OnSensorAccuracyLowListener {
 
     private final LinkedList<OnPathChangedListener> onPathChangedListeners;
     private final LinkedList<OnStepListener> onStepListeners;
-    private final LinkedList<OnDirectionChangedListener> onDirectionChangedListeners;
+    private final LinkedList<OnOrientationChangedListener> onOrientationChangedListeners;
     private final LinkedList<OnStepLengthChangedListener> onStepLengthChangedListeners;
+    private final LinkedList<OnMagneticFieldVectorChangedListener> onMagneticFieldVectorChangedListeners;
+    private final LinkedList<OnDownwardsVectorChangedListener> onDownwardsVectorChangedListeners;
+    private final LinkedList<OnSensorAccuracyLowListener> onSensorAccuracyLowListeners;
 
     private final LinkedList<OnAccelerometerEventListener> onAccelerometerEventListeners;
     private final LinkedList<OnGyroscopeEventListener> onGyroscopeEventListeners;
     private final LinkedList<OnMagneticFieldEventListener> onMagneticSensorEventListeners;
 
-    private StepReconstruction stepReconstruction;
-    private DirectionReconstruction directionReconstruction;
-    private StepLengthReconstruction stepLengthReconstruction;
-    private PathReconstruction pathReconstruction;
-
-    private String stepSamplesFilesDir;
 
 
-    public PositionReconstruction(String pStepSamplesFilesDir) {
+    private final AccelerometerProcessor accelerometerProcessor;
+    private final MagneticFieldProcessor magneticFieldProcessor;
+    private final OrientationReconstruction orientationReconstruction;
+    private final StepLengthReconstruction stepLengthReconstruction;
+    private final PathReconstruction pathReconstruction;
 
-        stepSamplesFilesDir = pStepSamplesFilesDir;
+
+    public PositionReconstruction() {
+        accelerometerProcessor = new AccelerometerProcessor((long)(3*1e9), 0, this, this);
+        magneticFieldProcessor = new MagneticFieldProcessor(this);
+        orientationReconstruction = new OrientationReconstruction(this);
+        stepLengthReconstruction = new StepLengthReconstruction(this);
+        pathReconstruction = new PathReconstruction(this);
 
         onPathChangedListeners = new LinkedList<>();
         onStepListeners = new LinkedList<>();
-        onDirectionChangedListeners = new LinkedList<>();
+        onOrientationChangedListeners = new LinkedList<>();
         onStepLengthChangedListeners = new LinkedList<>();
+        onMagneticFieldVectorChangedListeners = new LinkedList<>();
+        onDownwardsVectorChangedListeners = new LinkedList<>();
+        onSensorAccuracyLowListeners = new LinkedList<>();
+
 
         onAccelerometerEventListeners = new LinkedList<>();
         onGyroscopeEventListeners = new LinkedList<>();
         onMagneticSensorEventListeners = new LinkedList<>();
 
-        initReconstructions();
+
         initEventDistribution();
-        callInitOnReconstructions();
-    }
-
-    private void callInitOnReconstructions() {
-        stepReconstruction.init();
-        directionReconstruction.init();
-        stepLengthReconstruction.init();
-        pathReconstruction.init();
-    }
-
-    private void initReconstructions() {
-        stepReconstruction = new StepReconstruction(this, stepSamplesFilesDir);
-        directionReconstruction = new DirectionReconstruction(this);
-        stepLengthReconstruction = new StepLengthReconstruction(this);
-        pathReconstruction = new PathReconstruction(this);
     }
 
 
     private void initEventDistribution() {
-        // step reconstruction
-        registerAccelerometerEventListener(stepReconstruction);
+        // accelerometer
+        registerAccelerometerEventListener(accelerometerProcessor);
 
-        // direction reconstruction
-        registerGyroscopeEventListener(directionReconstruction);
-        registerMagneticFieldEventListener(directionReconstruction);
+        // magnetic field
+        registerMagneticFieldEventListener(magneticFieldProcessor);
+
+        // orientation reconstruction
+        registerOnMagneticFieldVectorChangedListener(orientationReconstruction);
+        registerOnDownwardsVectorChangedListener(orientationReconstruction);
+
 
         //step length reconstruction
 
         // path reconstruction
-        registerOnDirectionChangedListener(pathReconstruction);
+        registerOnOrientationChangedListener(pathReconstruction);
         registerOnStepLengthChangedListener(pathReconstruction);
         registerOnStepListener(pathReconstruction);
     }
@@ -105,12 +113,24 @@ public class PositionReconstruction implements
         onPathChangedListeners.add(pListener);
     }
 
+    public void registerOnMagneticFieldVectorChangedListener(OnMagneticFieldVectorChangedListener pListener) {
+        onMagneticFieldVectorChangedListeners.add(pListener);
+    }
+
+    public void registerOnSensorAccuracyLowListener(OnSensorAccuracyLowListener pListener) {
+        onSensorAccuracyLowListeners.add(pListener);
+    }
+
+    public void registerOnDownwardsVectorChangedListener(OnDownwardsVectorChangedListener pListener) {
+        onDownwardsVectorChangedListeners.add(pListener);
+    }
+
     public void registerOnStepListener(OnStepListener pListener) {
         onStepListeners.add(pListener);
     }
 
-    public void registerOnDirectionChangedListener(OnDirectionChangedListener pListener) {
-        onDirectionChangedListeners.add(pListener);
+    public void registerOnOrientationChangedListener(OnOrientationChangedListener pListener) {
+        onOrientationChangedListeners.add(pListener);
     }
 
     public void registerOnStepLengthChangedListener(OnStepLengthChangedListener pListener) {
@@ -130,6 +150,12 @@ public class PositionReconstruction implements
     }
 
     @Override
+    public void onMagneticFieldVectorChanged(Vector3D pMagneticField_ph) {
+        for(OnMagneticFieldVectorChangedListener listener : onMagneticFieldVectorChangedListeners)
+            listener.onMagneticFieldVectorChanged(pMagneticField_ph);
+    }
+
+    @Override
     public void onPathChanged(PathData pPathData) {
         for(OnPathChangedListener listener : onPathChangedListeners)
             listener.onPathChanged(pPathData);
@@ -142,32 +168,44 @@ public class PositionReconstruction implements
     }
 
     @Override
-    public void onDirectionChanged(DirectionData pDirectionData) {
-        for(OnDirectionChangedListener listener : onDirectionChangedListeners)
-            listener.onDirectionChanged(pDirectionData);
-    }
-
-    @Override
     public void onStepLengthChanged(StepLengthData pStepLengthData) {
         for(OnStepLengthChangedListener listener : onStepLengthChangedListeners)
             listener.onStepLengthChanged(pStepLengthData);
     }
 
     @Override
-    public void onGyroscopeEvent(float pX, float pY, float pZ, long pTimeStamp_ns, int pAccuracy) {
+    public void onGyroscopeEvent(SensorEvent pSensorEvent) {
         for(OnGyroscopeEventListener listener : onGyroscopeEventListeners)
-            listener.onGyroscopeEvent(pX, pY, pZ, pTimeStamp_ns, pAccuracy);
+            listener.onGyroscopeEvent(pSensorEvent);
     }
 
     @Override
-    public void onAccelerometerEvent(float pX, float pY, float pZ, long pTimeStamp_ns, int pAccuracy) {
+    public void onAccelerometerEvent(SensorEvent pSensorEvent) {
         for(OnAccelerometerEventListener listener : onAccelerometerEventListeners)
-            listener.onAccelerometerEvent(pX, pY, pZ, pTimeStamp_ns, pAccuracy);
+            listener.onAccelerometerEvent(pSensorEvent);
     }
 
     @Override
-    public void onMagneticFieldEvent(float pX, float pY, float pZ, long pTimeStamp_ns, int pAccuracy) {
+    public void onMagneticFieldEvent(SensorEvent pSensorEvent) {
         for(OnMagneticFieldEventListener listener : onMagneticSensorEventListeners)
-            listener.onMagneticFieldEvent(pX, pY, pZ, pTimeStamp_ns, pAccuracy);
+            listener.onMagneticFieldEvent(pSensorEvent);
+    }
+
+    @Override
+    public void onOrientationChanged(OrientationData pOrientationData) {
+        for(OnOrientationChangedListener listener : onOrientationChangedListeners)
+            listener.onOrientationChanged(pOrientationData);
+    }
+
+    @Override
+    public void onDownwardsVectorChanged(Vector3D pDownwards_ph) {
+        for(OnDownwardsVectorChangedListener listener : onDownwardsVectorChangedListeners)
+            listener.onDownwardsVectorChanged(pDownwards_ph);
+    }
+
+    @Override
+    public void onSensorAccuracyLow() {
+        for(OnSensorAccuracyLowListener listener : onSensorAccuracyLowListeners)
+            listener.onSensorAccuracyLow();
     }
 }

@@ -1,4 +1,4 @@
-package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.sensoreventcollections;
+package edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.sensoreventcollection;
 
 import java.util.AbstractSequentialList;
 import java.util.LinkedList;
@@ -11,9 +11,9 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
 
 public class FixedTimeWindow implements SensorEventCollection {
 
-    private LinkedList<SensorEvent> events;
-    private long windowSizeNs;
-    private long lowerResolutionBoundInNs;
+    private final LinkedList<SensorEvent> events;
+    private final long windowSizeNs;
+    private final long lowerResolutionBoundInNs;
     private long startTimeInNs;
     private boolean isFull;
 
