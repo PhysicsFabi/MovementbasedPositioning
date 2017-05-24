@@ -7,7 +7,10 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 public class StepData {
     public double stepLengthM;
-    public long durationNs;
-    public long footDownTimeNs;
+    public long startTimeNs;
     public Vector3D horizontalDirectionNormalized_ph;
+    public long endTimeNs;
+    public long getDurationNs() {
+        return endTimeNs-startTimeNs;
+    }
 }

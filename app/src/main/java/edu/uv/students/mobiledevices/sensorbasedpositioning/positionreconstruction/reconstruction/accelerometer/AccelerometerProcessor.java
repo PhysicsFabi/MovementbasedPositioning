@@ -14,7 +14,6 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.LinearAlgebraTools;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEventsProcessingTools;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.sensoreventcollection.SensorEventCollection;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.sensoreventcollection.SlidingWindow;
 
@@ -110,9 +109,9 @@ public class AccelerometerProcessor implements OnAccelerometerEventListener {
     }
 
 
-    public final long MAX_STEP_TIME_NS = (long) 0.9e9;
-    public final long MIN_STEP_TIME_NS = (long) 0.4e9;
-    public final long DIRECTION_DETECTION_TIME_AFTER_FOOT_DOWN_NS = (long)0.1e9;
+    public final long MAX_STEP_TIME_NS = (long) 0.8e9;
+    public final long MIN_STEP_TIME_NS = (long) 0.38e9;
+    //public final long DIRECTION_DETECTION_TIME_AFTER_FOOT_DOWN_NS = (long)0.1e9;
 
     private Vector3D downwardsNormalized_ph;
     private Vector3D gravityAcceleration_ph;
@@ -135,11 +134,9 @@ public class AccelerometerProcessor implements OnAccelerometerEventListener {
         events = new SlidingWindow(pWindowSizeNs, pLowerResolutionBoundInNs, 3);
     }
 
-    private boolean isStepInBuffer() {
-        if (previousDivision == null)
-            return false;
-        long stepCandidateDurationNs = currentDivision.getDurationNs() + previousDivision.getDurationNs();
-        return stepCandidateDurationNs > MIN_STEP_TIME_NS && stepCandidateDurationNs < MAX_STEP_TIME_NS;
+    private boolean isStep(StepData pStepCandidateData) {
+        long stepDurationNs = pStepCandidateData.getDurationNs();
+        return stepDurationNs > MIN_STEP_TIME_NS && stepDurationNs < MAX_STEP_TIME_NS;
     }
 
 
@@ -159,14 +156,18 @@ public class AccelerometerProcessor implements OnAccelerometerEventListener {
 
 
         if (!currentDivision.add(pSensorEvent)) {
-            if (currentDivision.peakType == PeakType.DOWN_PEAK && isStepInBuffer()) {
-                StepData stepData = new StepData();
-                stepData.footDownTimeNs = prepreviousDivision.peakTimeNs;
-                stepData.durationNs = currentDivision.peakTimeNs-stepData.footDownTimeNs;
-                Log.i("STEP TIME", "\t" + ((double)stepData.durationNs/1e9));
-                stepData.horizontalDirectionNormalized_ph = LinearAlgebraTools.projectOnPane(downwardsNormalized_ph, new Vector3D(.0,1.0,.0)).normalize();
-                Log.i("STEP EVALUATION", "\t" + prepreviousDivision.peakTimeNs);
-                onStepListener.onStep(stepData);
+            if (currentDivision.peakType == PeakType.DOWN_PEAK) {
+                if(prepreviousDivision!=null) {
+                    StepData stepCandidateData = new StepData();
+                    stepCandidateData.startTimeNs = prepreviousDivision.peakTimeNs;
+                    stepCandidateData.endTimeNs = currentDivision.peakTimeNs;
+                    //Log.i("STEP TIME", "\t" + ((double)stepCandidateData.durationNs/1e9));
+                    if(isStep(stepCandidateData)) {
+                        stepCandidateData.horizontalDirectionNormalized_ph = LinearAlgebraTools.projectOnPane(downwardsNormalized_ph, new Vector3D(.0, 1.0, .0)).normalize();
+                        Log.i("STEP EVALUATION", "\t" + prepreviousDivision.peakTimeNs);
+                        onStepListener.onStep(stepCandidateData);
+                    }
+                }
             }
             prepreviousDivision = previousDivision;
             previousDivision = currentDivision;

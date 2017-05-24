@@ -32,8 +32,8 @@ public class MagneticFieldProcessor implements OnMagneticFieldEventListener {
             );
         }
         listener.onMagneticFieldVectorChanged(magneticFieldLowPassFiltered);
-        //Log.i("MAGNETIC EVALUATION","\t"+pSensorEvent.footDownTimeNs+"\t"+magneticFieldLowPassFiltered.getX()+"\t"+magneticFieldLowPassFiltered.getY()+"\t"+magneticFieldLowPassFiltered.getZ());
-        //Log.i("MAGNETIC EVALUATION","\t"+pSensorEvent.footDownTimeNs+"\t"+pSensorEvent.values[0]+"\t"+pSensorEvent.values[1]+"\t"+pSensorEvent.values[2]);
+        //Log.i("MAGNETIC EVALUATION","\t"+pSensorEvent.startTimeNs+"\t"+magneticFieldLowPassFiltered.getX()+"\t"+magneticFieldLowPassFiltered.getY()+"\t"+magneticFieldLowPassFiltered.getZ());
+        //Log.i("MAGNETIC EVALUATION","\t"+pSensorEvent.startTimeNs+"\t"+pSensorEvent.values[0]+"\t"+pSensorEvent.values[1]+"\t"+pSensorEvent.values[2]);
     }
 
 

@@ -76,8 +76,8 @@ public class Positioning extends AppCompatActivity implements
 
         // Choose either to initialize the real sensors
         // or, for testing, use the event emulation
-        initSensors();
-        //initEventEmulation();
+        //initSensors();
+        initEventEmulation();
     }
 
     private void initEventEmulation() {
@@ -85,7 +85,7 @@ public class Positioning extends AppCompatActivity implements
         // the EventEmulator provides different emulations for testing purposes
         //eventEmulator.startEmulation01();
         //eventEmulator.startEmulationLoadedFromFile(getResources().openRawResource(R.raw.walking_in_flat),(long)(3*1e9));
-        eventEmulator.startEmulationLoadedFromFile(getResources().openRawResource(R.raw.straight_walking_847cm),0);
+        eventEmulator.startEmulationLoadedFromFile(getResources().openRawResource(R.raw.parcours),0);
     }
 
     private void initSensors() {

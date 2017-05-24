@@ -19,6 +19,6 @@ public class StepLengthReconstruction implements OnStepListener {
 
     @Override
     public void onStep(StepData pStepData) {
-        pStepData.stepLengthM=stepDurationSToStepLengthM.value(((double)pStepData.durationNs)/1e9);
+        pStepData.stepLengthM=stepDurationSToStepLengthM.value(((double)pStepData.getDurationNs())/1e9);
     }
 }

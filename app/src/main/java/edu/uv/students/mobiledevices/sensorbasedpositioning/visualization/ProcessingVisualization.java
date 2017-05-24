@@ -141,6 +141,11 @@ public class ProcessingVisualization extends PApplet {
         int headingPaddingTop;
         int headingPaddingLeft;
         String headingText = "Dead-Reckoning";
+        PImage descirptionImg;
+        int descirptionImgW;
+        int descirptionImgH;
+        int descirptionImgX;
+        int descirptionImgY;
 
 
         public DescriptionState() {
@@ -155,6 +160,14 @@ public class ProcessingVisualization extends PApplet {
             headingPaddingLeft=floor((width-headingW)/2.0f);
             headingTextSize = findFontSizeToFitBox(headingW,headingH, headingText);
             headingFont = createDefaultFont(headingTextSize);
+
+
+            descirptionImgW=headingW;
+            descirptionImgH=height-2*headingPaddingTop-2*buttonPadding-buttonH-headingH;
+            descirptionImg=loadImageToFitBox("description.png",descirptionImgW,descirptionImgH);
+            descirptionImgX=headingPaddingLeft;
+            descirptionImgY=headingH+2*headingPaddingTop;
+
 
             startButton = new TransitRectButton(
                     "VISUALIZATION_STATE",
@@ -174,8 +187,7 @@ public class ProcessingVisualization extends PApplet {
             textAlign(CENTER,CENTER);
             text(headingText,headingPaddingLeft,headingPaddingTop,headingW,headingH);
             popStyle();
-
-
+            drawImageInBox(descirptionImg,descirptionImgX,descirptionImgY,descirptionImgW,descirptionImgH,CENTER,CENTER);
         }
     }
     class Figurine implements Drawable {
@@ -1114,6 +1126,11 @@ public class ProcessingVisualization extends PApplet {
             return resize(pImage,0,floor(pHeight));
         else
             return resize(pImage,floor(pWidth),0);
+    }
+
+    public PImage loadImageToFitBox(String pFileName,int pWidth,int pHeight) {
+        PImage img = loadImage(pFileName);
+        return resizeToFitBox(img,pWidth,pHeight);
     }
 
     public PImage resizeToCoverBox(PImage pImage,int pWidth,int pHeight) {
