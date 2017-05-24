@@ -13,9 +13,12 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnDownwardsVectorChangedListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnStepListener;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.LinearAlgebraTools;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.Peak;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.sensoreventcollection.SensorEventCollection;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.sensoreventcollection.SlidingWindow;
+
+import static edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.Peak.PeakType.DOWN_PEAK;
+import static edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.Peak.PeakType.UP_PEAK;
 
 /**
  * Created by Fabi on 20.05.2017.
@@ -23,101 +26,19 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstructi
 
 public class AccelerometerProcessor implements OnAccelerometerEventListener {
 
-    public enum PeakType {
-        UP_PEAK,
-        DOWN_PEAK;
-
-        public PeakType invert() {
-            switch (this) {
-                case UP_PEAK:
-                    return DOWN_PEAK;
-                case DOWN_PEAK:
-                    return UP_PEAK;
-            }
-            return DOWN_PEAK;
-        }
-    }
-
-    private class DivisionByPeak implements SensorEventCollection {
-
-        private final double THRESHOLD_UP = 1.0;
-        private final double THRESHOLD_DOWN = -1.9;
-
-        private final LinkedList<SensorEvent> events;
-        private final PeakType peakType;
-        private double extremeAcceleration;
-        private long peakTimeNs;
-
-        public DivisionByPeak(PeakType pPeakType) {
-            events = new LinkedList<>();
-            peakType = pPeakType;
-            extremeAcceleration = 0.0;
-            peakTimeNs = 0;
-
-        }
-
-        public long getStartTimeNs() {
-            return events.getFirst().timeNs;
-        }
-
-        public long getEndTimeNs() {
-            return events.getLast().timeNs;
-        }
-
-        public boolean add(SensorEvent pEvent) {
-            Vector3D currentAcceleration_ph = new Vector3D(pEvent.values[0], pEvent.values[1], pEvent.values[2]).subtract(gravityAcceleration_ph);
-            double currentDownwardsAcceleration = downwardsNormalized_ph.dotProduct(currentAcceleration_ph);
-            Log.i("DOWNWARDS EVALUATION", "\t"+pEvent.timeNs+"\t"+currentDownwardsAcceleration);
-            boolean add = false;
-            boolean newExtreme = false;
-            switch (peakType) {
-                case UP_PEAK:
-                    if (currentDownwardsAcceleration > THRESHOLD_DOWN) {
-                        add = true;
-                        if (currentDownwardsAcceleration > extremeAcceleration)
-                            newExtreme = true;
-                    }
-                    break;
-                case DOWN_PEAK:
-                    if (currentDownwardsAcceleration < THRESHOLD_UP) {
-                        add = true;
-                        if (currentDownwardsAcceleration < extremeAcceleration)
-                            newExtreme = true;
-                    }
-                    break;
-            }
-            if (newExtreme) {
-                extremeAcceleration = currentDownwardsAcceleration;
-                peakTimeNs = pEvent.timeNs;
-            }
-            if (add) {
-                events.add(pEvent);
-            }
-            return add;
-        }
-
-        long getDurationNs() {
-            if (events.isEmpty())
-                return 0;
-            return events.getLast().timeNs - events.getFirst().timeNs;
-        }
-
-        @Override
-        public AbstractSequentialList<SensorEvent> getSensorEvents() {
-            return events;
-        }
-    }
-
-
     public final long MAX_STEP_TIME_NS = (long) 0.8e9;
     public final long MIN_STEP_TIME_NS = (long) 0.38e9;
-    //public final long DIRECTION_DETECTION_TIME_AFTER_FOOT_DOWN_NS = (long)0.1e9;
+    public final long MIN_UP_PEAK_TIME_NS = (long) 0.28e9;
+    public final long MIN_DOWN_PEAK_TIME_NS = (long) 0.145e9;
+    private final double THRESHOLD_UP_PEAK = 1.0;
+    private final double THRESHOLD_DOWN_PEAK = -1.9;
+
 
     private Vector3D downwardsNormalized_ph;
     private Vector3D gravityAcceleration_ph;
-    private DivisionByPeak currentDivision;
-    private DivisionByPeak previousDivision;
-    private DivisionByPeak prepreviousDivision;
+    private Peak currentPeak;
+    private Peak previousPeak;
+    private Peak prepreviousPeak;
 
     private final OnStepListener onStepListener;
     private final OnDownwardsVectorChangedListener onDownwardsVectorChangedListener;
@@ -128,9 +49,9 @@ public class AccelerometerProcessor implements OnAccelerometerEventListener {
     public AccelerometerProcessor(long pWindowSizeNs, long pLowerResolutionBoundInNs, OnStepListener pOnStepListener, OnDownwardsVectorChangedListener pOnDownwardsVectorChangedListener) {
         onStepListener = pOnStepListener;
         onDownwardsVectorChangedListener = pOnDownwardsVectorChangedListener;
-        currentDivision = new DivisionByPeak(PeakType.DOWN_PEAK);
-        previousDivision = null;
-        prepreviousDivision = null;
+        currentPeak = new Peak(UP_PEAK);
+        previousPeak = null;
+        prepreviousPeak = null;
         events = new SlidingWindow(pWindowSizeNs, pLowerResolutionBoundInNs, 3);
     }
 
@@ -143,36 +64,53 @@ public class AccelerometerProcessor implements OnAccelerometerEventListener {
     @Override
     public void onAccelerometerEvent(SensorEvent pSensorEvent) {
         events.add(pSensorEvent);
-        float[] movingMeans = events.getMovingMeans();
-        gravityAcceleration_ph = new Vector3D(movingMeans[0], movingMeans[1], movingMeans[2]);
-        downwardsNormalized_ph = gravityAcceleration_ph.scalarMultiply(-1.0).normalize();
-        onDownwardsVectorChangedListener.onDownwardsVectorChanged(downwardsNormalized_ph);
-
-
-        //Vector3D horizontalAcceleration = new Vector3D(pSensorEvent.values[0], pSensorEvent.values[1], pSensorEvent.values[2]).subtract(gravityAcceleration_ph);
-        //horizontalAcceleration = LinearAlgebraTools.projectOnPane(downwardsNormalized_ph, horizontalAcceleration);
-        //Log.i("HORIZONTAL ACCELERATION", "\t"+pSensorEvent.timeNs+"\t"+horizontalAcceleration.getX()+"\t"+horizontalAcceleration.getY()+"\t"+horizontalAcceleration.getZ());
-        //Log.i("DOWNWARDS ACCELERATION", "\t"+pSensorEvent.timeNs+"\t"+downwardsNormalized_ph);
-
-
-        if (!currentDivision.add(pSensorEvent)) {
-            if (currentDivision.peakType == PeakType.DOWN_PEAK) {
-                if(prepreviousDivision!=null) {
+        extractGravity();
+        Vector3D currentAcceleration_ph = new Vector3D(pSensorEvent.values[0], pSensorEvent.values[1], pSensorEvent.values[2]).subtract(gravityAcceleration_ph);
+        double currentDownwardsAcceleration = downwardsNormalized_ph.dotProduct(currentAcceleration_ph);
+        Log.i("DOWNWARDS_ACCELERATION", "\t"+pSensorEvent.timeNs+"\t"+currentDownwardsAcceleration);
+        if (isPeakChange(currentDownwardsAcceleration)) {
+            if (currentPeak.getPeakType() == DOWN_PEAK) {
+                if(prepreviousPeak!=null) {
                     StepData stepCandidateData = new StepData();
-                    stepCandidateData.startTimeNs = prepreviousDivision.peakTimeNs;
-                    stepCandidateData.endTimeNs = currentDivision.peakTimeNs;
-                    //Log.i("STEP TIME", "\t" + ((double)stepCandidateData.durationNs/1e9));
+                    stepCandidateData.startTimeNs = prepreviousPeak.getPeakTime();
+                    stepCandidateData.endTimeNs = currentPeak.getPeakTime();
+                    //Log.i("STEP_DURATION", "\t" + ((double)stepCandidateData.durationNs/1e9));
                     if(isStep(stepCandidateData)) {
                         stepCandidateData.horizontalDirectionNormalized_ph = LinearAlgebraTools.projectOnPane(downwardsNormalized_ph, new Vector3D(.0, 1.0, .0)).normalize();
-                        Log.i("STEP EVALUATION", "\t" + prepreviousDivision.peakTimeNs);
+                        Log.i("STEP_START_TIME", "\t" + stepCandidateData.startTimeNs);
                         onStepListener.onStep(stepCandidateData);
                     }
                 }
             }
-            prepreviousDivision = previousDivision;
-            previousDivision = currentDivision;
-            currentDivision = new DivisionByPeak(currentDivision.peakType.invert());
+            prepreviousPeak = previousPeak;
+            previousPeak = currentPeak;
+            currentPeak = new Peak(currentPeak.getPeakType().invert());
+            Log.i("PEAK_START_TIME", "\t" + pSensorEvent.timeNs);
         }
+        currentPeak.add(pSensorEvent.timeNs, currentDownwardsAcceleration);
+    }
+
+    private boolean isPeakChange(double currentDownwardsAcceleration) {
+        switch (currentPeak.getPeakType()) {
+            case UP_PEAK:
+                if (currentDownwardsAcceleration < THRESHOLD_DOWN_PEAK && (currentPeak.getDurationNs()>MIN_UP_PEAK_TIME_NS || previousPeak==null)) {
+                    return true;
+                }
+                break;
+            case DOWN_PEAK:
+                if (currentDownwardsAcceleration > THRESHOLD_UP_PEAK && currentPeak.getDurationNs()>MIN_DOWN_PEAK_TIME_NS) {
+                    return true;
+                }
+                break;
+        }
+        return false;
+    }
+
+    private void extractGravity() {
+        float[] movingMeans = events.getMovingMeans();
+        gravityAcceleration_ph = new Vector3D(movingMeans[0], movingMeans[1], movingMeans[2]);
+        downwardsNormalized_ph = gravityAcceleration_ph.scalarMultiply(-1.0).normalize();
+        onDownwardsVectorChangedListener.onDownwardsVectorChanged(downwardsNormalized_ph);
     }
 
     private Vector3D integrateHorizontalAcceleration(AbstractList<SensorEvent> pSensorEvents, long fromTimeNs, long toTimeNs) {
