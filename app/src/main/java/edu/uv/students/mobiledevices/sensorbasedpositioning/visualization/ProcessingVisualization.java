@@ -111,7 +111,7 @@ public class ProcessingVisualization extends PApplet {
             fill(0xff000000);
             textSize(0.5f*blockW);
             textAlign(CENTER, CENTER);
-            text("1m",2*blockW,(n_h-2)*blockW,blockW,blockW);
+            text("1m",2*blockW,(n_h-3)*blockW,blockW,blockW);
             popMatrix();
         }
 
@@ -435,7 +435,7 @@ public class ProcessingVisualization extends PApplet {
 
         int w;
         int h;
-        int compassRoseW;
+        int compassRoseH;
         int compassRosePadding;
 
         PImage compassRoseImg;
@@ -458,9 +458,6 @@ public class ProcessingVisualization extends PApplet {
             w=pW;
             h=pH;
             onZoomChangedListener=pOnZoomChangedListener;
-            compassRoseW = floor(0.1f*w);
-            compassRosePadding = floor(0.01f*w);
-            compassRoseImg = resize(loadImage("compass_rose.png"), compassRoseW, 0);
 
             buttonH=floor(0.07f*h);
             buttonW=3*buttonH;
@@ -488,6 +485,11 @@ public class ProcessingVisualization extends PApplet {
                 public void onMousePressed(RectButton pButton){}
                 public void onMouseReleased(RectButton pButton){}
             });
+
+
+            compassRoseH=buttonH;
+            compassRosePadding = buttonPadding;
+            compassRoseImg = resize(loadImage("compass_rose.png"), 0, compassRoseH);
 
             zoomSelectorW=floor(0.7f*width);
             zoomSelectorH=buttonH;
@@ -1248,7 +1250,7 @@ public class ProcessingVisualization extends PApplet {
             hud = new Hud(width,height,this);
             figurine = new Figurine();
             isSensorAccuracyLow=false;
-            lowSensorAccuracyText = "Sensor Precision changed to low!";
+            lowSensorAccuracyText = "Sensor Precision not on HIGH! Try Reset!";
             lowSensorAccuracyBoxH=floor(0.2f*height);
             textS = findFontSizeToFitBox((float)width, (float)lowSensorAccuracyBoxH, lowSensorAccuracyText);
             font = createDefaultFont(textS);
@@ -1263,12 +1265,14 @@ public class ProcessingVisualization extends PApplet {
             strokeWeight(0.01f*width);
             stroke(0xff000000);
             if(path!=null) {
-                for(PVector position : path) {
-                    int x1=metersToPixels(position.x);
-                    int y1=metersToPixels(position.y);
-                    line(x0,y0,x1,y1);
-                    x0=x1;
-                    y0=y1;
+                synchronized(path) {
+                    for(PVector position : path) {
+                        int x1=metersToPixels(position.x);
+                        int y1=metersToPixels(position.y);
+                        line(x0,y0,x1,y1);
+                        x0=x1;
+                        y0=y1;
+                    }
                 }
             }
 

@@ -20,11 +20,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.PositionReconstruction;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.eventemulation.EventEmulator;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnPathChangedListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.interfaces.OnSensorAccuracyLowListener;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.reconstruction.path.PathData;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.DeadReckoning;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.eventemulation.EventEmulator;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.interfaces.OnPathChangedListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.interfaces.OnSensorAccuracyLowListener;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.reconstruction.path.PathData;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.visualization.ProcessingVisualization;
 import processing.core.PImage;
 import processing.core.PVector;
@@ -38,7 +38,7 @@ public class Positioning extends AppCompatActivity implements
     public static final String LOG_TAG = "SENSORBASED_POSITIONING";
     private static final String SCREEN_SHOT_FILE_NAME = "dead_reckoning.jpg";
 
-    private PositionReconstruction positionReconstruction;
+    private DeadReckoning DeadReckoning;
 
     private ProcessingVisualization processingVisualization;
 
@@ -67,25 +67,25 @@ public class Positioning extends AppCompatActivity implements
     }
 
     private void initPositionReconstruction() {
-        positionReconstruction = new PositionReconstruction();
-        positionReconstruction.registerOnPathChangedListener(this);
-        positionReconstruction.registerOnSensorAccuracyLowListener(this);
+        DeadReckoning = new DeadReckoning();
+        DeadReckoning.registerOnPathChangedListener(this);
+        DeadReckoning.registerOnSensorAccuracyLowListener(this);
         if(isCurrentSensorAccuracyLow()) {
-            positionReconstruction.onSensorAccuracyLow();
+            DeadReckoning.onSensorAccuracyLow();
         }
 
         // Choose either to initialize the real sensors
         // or, for testing, use the event emulation
-        //initSensors();
-        initEventEmulation();
+        initSensors();
+        //initEventEmulation();
     }
 
     private void initEventEmulation() {
-        EventEmulator eventEmulator = new EventEmulator(positionReconstruction);
+        EventEmulator eventEmulator = new EventEmulator(DeadReckoning);
         // the EventEmulator provides different emulations for testing purposes
         //eventEmulator.startEmulation01();
         //eventEmulator.startEmulationLoadedFromFile(getResources().openRawResource(R.raw.walking_in_flat),(long)(3*1e9));
-        eventEmulator.startEmulationLoadedFromFile(getResources().openRawResource(R.raw.straight_walking_828cm),0);
+        eventEmulator.startEmulationLoadedFromFile(getResources().openRawResource(R.raw.parcours),0);
     }
 
     private void initSensors() {
@@ -109,6 +109,10 @@ public class Positioning extends AppCompatActivity implements
     @Override
     public void onReset() {
         initPositionReconstruction();
+        direction = 0.0f;
+        path = new ArrayList<>();
+        path.add(new PVector(.0f, .0f));
+        processingVisualization.onPathChanged();
     }
 
     @Override
@@ -127,8 +131,8 @@ public class Positioning extends AppCompatActivity implements
             intentShareFile.setType("image/*");
             intentShareFile.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intentShareFile.putExtra(Intent.EXTRA_STREAM, uri);
-            intentShareFile.putExtra(Intent.EXTRA_SUBJECT, "Sharing File...");
-            intentShareFile.putExtra(Intent.EXTRA_TEXT, "Sharing File...");
+            intentShareFile.putExtra(Intent.EXTRA_SUBJECT, "Dead-Reckoning");
+            intentShareFile.putExtra(Intent.EXTRA_TEXT, "Dead-Reckoning");
             getApplicationContext().startActivity(Intent.createChooser(intentShareFile, "Share File"));
         }
     }
@@ -148,13 +152,21 @@ public class Positioning extends AppCompatActivity implements
 
     @Override
     public void onPathChanged(PathData pPathData) {
-        path = new ArrayList<>(pPathData.positions.size());
-        synchronized(pPathData.positions) {
-            for(Vector2D position : pPathData.positions) {
-                path.add(Vector2DToPVector(position));
+        path = new ArrayList<>(pPathData.getPositions().size());
+        synchronized (path) {
+            synchronized (pPathData.getPositions()) {
+                for (Vector2D position : pPathData.getPositions()) {
+                    path.add(Vector2DToPVector(position));
+                }
             }
         }
         direction = (float)pPathData.angle;
+        processingVisualization.onPathChanged();
+    }
+
+    @Override
+    public void onOrientationChanged(double pAngle) {
+        direction = (float)pAngle;
         processingVisualization.onPathChanged();
     }
 
@@ -170,14 +182,14 @@ public class Positioning extends AppCompatActivity implements
     @Override
     public void onSensorChanged(SensorEvent pEvent) {
         if (pEvent.sensor == accelerometer) {
-            positionReconstruction.onAccelerometerEvent(fromSensorEvent(pEvent));
+            DeadReckoning.onAccelerometerEvent(fromSensorEvent(pEvent));
         } else if (pEvent.sensor == magneticSensor) {
-            positionReconstruction.onMagneticFieldEvent(fromSensorEvent(pEvent));
+            DeadReckoning.onMagneticFieldEvent(fromSensorEvent(pEvent));
         }
     }
 
-    public static  edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent fromSensorEvent(SensorEvent pEvent) {
-        return new edu.uv.students.mobiledevices.sensorbasedpositioning.positionreconstruction.utils.SensorEvent(
+    public static  edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.utils.SensorEvent fromSensorEvent(SensorEvent pEvent) {
+        return new edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.utils.SensorEvent(
                 pEvent.timestamp, pEvent.values.clone(), pEvent.accuracy);
     }
 
@@ -189,7 +201,7 @@ public class Positioning extends AppCompatActivity implements
             isMagneticFieldAccuracyLow = accuracy==SensorManager.SENSOR_STATUS_ACCURACY_HIGH;
 
         if(isCurrentSensorAccuracyLow())
-            positionReconstruction.onSensorAccuracyLow();
+            DeadReckoning.onSensorAccuracyLow();
     }
 
     private void buildNotAllSensorsPresentDialog() {
