@@ -38,7 +38,7 @@ public class Positioning extends AppCompatActivity implements
     public static final String LOG_TAG = "SENSORBASED_POSITIONING";
     private static final String SCREEN_SHOT_FILE_NAME = "dead_reckoning.jpg";
 
-    private DeadReckoning DeadReckoning;
+    private DeadReckoning deadReckoning;
 
     private ProcessingVisualization processingVisualization;
 
@@ -66,12 +66,12 @@ public class Positioning extends AppCompatActivity implements
         initProcessing();
     }
 
-    private void initPositionReconstruction() {
-        DeadReckoning = new DeadReckoning();
-        DeadReckoning.registerOnPathChangedListener(this);
-        DeadReckoning.registerOnSensorAccuracyLowListener(this);
+    private void initDeadReckoning() {
+        deadReckoning = new DeadReckoning();
+        deadReckoning.registerOnPathChangedListener(this);
+        deadReckoning.registerOnSensorAccuracyLowListener(this);
         if(isCurrentSensorAccuracyLow()) {
-            DeadReckoning.onSensorAccuracyLow();
+            deadReckoning.onSensorAccuracyLow();
         }
 
         // Choose either to initialize the real sensors
@@ -81,7 +81,7 @@ public class Positioning extends AppCompatActivity implements
     }
 
     private void initEventEmulation() {
-        EventEmulator eventEmulator = new EventEmulator(DeadReckoning);
+        EventEmulator eventEmulator = new EventEmulator(deadReckoning);
         // the EventEmulator provides different emulations for testing purposes
         //eventEmulator.startEmulation01();
         //eventEmulator.startEmulationLoadedFromFile(getResources().openRawResource(R.raw.walking_in_flat),(long)(3*1e9));
@@ -108,7 +108,7 @@ public class Positioning extends AppCompatActivity implements
 
     @Override
     public void onReset() {
-        initPositionReconstruction();
+        initDeadReckoning();
         direction = 0.0f;
         path = new ArrayList<>();
         path.add(new PVector(.0f, .0f));
@@ -117,7 +117,7 @@ public class Positioning extends AppCompatActivity implements
 
     @Override
     public void startDeadReckoning() {
-        initPositionReconstruction();
+        initDeadReckoning();
     }
 
     @Override
@@ -182,9 +182,9 @@ public class Positioning extends AppCompatActivity implements
     @Override
     public void onSensorChanged(SensorEvent pEvent) {
         if (pEvent.sensor == accelerometer) {
-            DeadReckoning.onAccelerometerEvent(fromSensorEvent(pEvent));
+            deadReckoning.onAccelerometerEvent(fromSensorEvent(pEvent));
         } else if (pEvent.sensor == magneticSensor) {
-            DeadReckoning.onMagneticFieldEvent(fromSensorEvent(pEvent));
+            deadReckoning.onMagneticFieldEvent(fromSensorEvent(pEvent));
         }
     }
 
@@ -201,7 +201,7 @@ public class Positioning extends AppCompatActivity implements
             isMagneticFieldAccuracyLow = accuracy==SensorManager.SENSOR_STATUS_ACCURACY_HIGH;
 
         if(isCurrentSensorAccuracyLow())
-            DeadReckoning.onSensorAccuracyLow();
+            deadReckoning.onSensorAccuracyLow();
     }
 
     private void buildNotAllSensorsPresentDialog() {

@@ -11,7 +11,7 @@ import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.recons
 import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.utils.LinearAlgebraTools;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.utils.Peak;
 import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.utils.SensorEvent;
-import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.utils.sensoreventcollection.SlidingWindow;
+import edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.utils.sensoreventcollection.MovingWindow;
 
 import static edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.utils.Peak.PeakType.DOWN_PEAK;
 import static edu.uv.students.mobiledevices.sensorbasedpositioning.deadreckoning.utils.Peak.PeakType.UP_PEAK;
@@ -44,7 +44,7 @@ public class StepReconstruction implements OnAccelerometerEventListener, OnOrien
     private final OnStepListener onStepListener;
     private final OnDownwardsVectorChangedListener onDownwardsVectorChangedListener;
 
-    private final SlidingWindow events;
+    private final MovingWindow events;
     private OrientationData currentOrientationData;
 
 
@@ -54,7 +54,7 @@ public class StepReconstruction implements OnAccelerometerEventListener, OnOrien
         currentPeak = new Peak(UP_PEAK);
         previousPeak = null;
         prepreviousPeak = null;
-        events = new SlidingWindow(pWindowSizeNs, pLowerResolutionBoundInNs, 3);
+        events = new MovingWindow(pWindowSizeNs, pLowerResolutionBoundInNs, 3);
         stepSeries = new LinkedList<>();
         isCurrentStepSeriesTerminated = true;
     }

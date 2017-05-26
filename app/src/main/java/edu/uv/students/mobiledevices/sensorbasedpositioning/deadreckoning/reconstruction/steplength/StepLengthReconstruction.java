@@ -30,7 +30,11 @@ public class StepLengthReconstruction implements OnStepListener {
         StepData lastStep;
         switch (pStepSeries.size()) {
             case 1:
-                pStepSeries.getLast().stepLengthM = DEFAULT_STEP_LENGTH_M;
+                lastStep = pStepSeries.getLast();
+                lastStep.stepLengthM = DEFAULT_STEP_LENGTH_M;
+                if(lastStep.stepType== StepData.StepType.BEGIN_AND_END_OF_SERIES) {
+                    lastStep.stepLengthM/=2.0;
+                }
                 break;
             case 2:
                 lastStep = pStepSeries.getLast();
